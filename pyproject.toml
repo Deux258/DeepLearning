@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fjordfish-tarea2"
+version = "0.1.0"
+description = "Auditoría, particiones, evaluación e integración de detectores para Tarea 2"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26", "Pillow>=10", "PyYAML>=6", "pycocotools>=2.0.8", "matplotlib>=3.8"]
+
+[project.optional-dependencies]
+models = ["torch>=2.4", "torchvision>=0.19", "ultralytics==8.4.174"]
+test = ["pytest>=8"]
+
+[project.scripts]
+fjordfish = "fjordfish.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["fjordfish*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["models: pruebas con PyTorch/Torchvision", "pretrained: requiere pesos descargados"]
