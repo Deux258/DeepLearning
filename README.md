@@ -1,93 +1,75 @@
-# Tarea 2 — notebook completo
+# Tarea 2 — notebook y cierre técnico
 
-El entregable principal es `Tarea_2.ipynb`. Todo el código ejecutable, sus pruebas,
-explicaciones, gráficos y análisis están dentro del notebook. Los archivos Python
-auxiliares de desarrollo no son dependencias del entregable.
+La versión oficial está en esta carpeta. **Todo el código del flujo permanece en
+`Tarea_2.ipynb`**: auditoría, particiones, pruebas, entrenamiento recuperable,
+comparación, robustez, reproducción y empaquetado. `docs/` no es una dependencia.
+No se prepararon diapositivas ni video en esta intervención.
 
-## Ejecución
+## Ejecución local
 
-1. Abrir el notebook en la carpeta del proyecto y seleccionar el entorno Python.
-   En este equipo el intérprete local es `.venv/Scripts/python.exe`.
-2. Revisar las rutas y dependencias de la sección 1. Los originales están en
-   `data/extracted/` y los pesos en `resultados_etapas_1_2/pesos/`.
-3. Ejecutar las secciones 1–8 para auditoría, particiones e integración.
-4. Las secciones 9–12 definen y prueban el entrenamiento recuperable, la
-   comparación y la robustez. Sus pruebas breves se pueden ejecutar en CPU.
-5. Para entrenar en GPU, definir `RUTA_PERSISTENTE` en la sección 9 con una carpeta
-   persistente ya montada y activar `EJECUTAR_ENTRENAMIENTOS`. La calibración fija
-   el batch físico común antes de iniciar los cuatro modelos. Recorre una época
-   por fase: completa en los modelos desde cero y congelada/fine-tuning en los
-   dos preentrenados. Comprueba una actualización de pesos antes congelados,
-   usa AMP y registra los máximos de memoria asignada y reservada. Un OOM en
-   cualquiera de las fases obliga a repetir todos los modelos con batch 1.
-6. Al terminar las corridas, activar `EJECUTAR_COMPARACION`. Se cierran decisiones
-   con validación antes de evaluar test y medir latencia.
-7. Activar `EJECUTAR_ROBUSTEZ` para evaluar el ganador de validación en seis
-   degradaciones y la condición limpia, conservando pesos y umbral.
+Abrir el notebook desde esta carpeta y seleccionar un Python con las dependencias
+indicadas en su configuración. `RUTA_PROYECTO` permite indicar otra raíz si el
+kernel parte desde una carpeta distinta. El notebook no depende de una `.venv`
+específica ni de módulos Python del proyecto.
 
-Los tres interruptores de ejecuciones prolongadas se entregan desactivados.
-`EJECUTAR_PRUEBAS_NUEVAS` permite repetir las pruebas de aceptación. Los resultados
-sintéticos son diagnósticos y no se admiten como evaluación final de la tarea.
+Los datos están en `data/extracted/`. Los pesos y resultados ya están consolidados
+en `resultados_etapas_1_2/`. Las auditorías se reubican sin cambiar su identidad;
+las referencias COCO/YOLO se regeneran desde los mismos IDs.
 
-## Recuperación
+Ejecutar desde el inicio para comprobar CPU, auditoría y pilotos. Las pruebas
+sintéticas son diagnósticos: no se admiten como evaluación final de FjordFish.
+El equipo local tiene AMD Radeon RX 6600 y este PyTorch no dispone de CUDA.
 
-Mantener ruta, etiqueta de estudio y configuración al retomar. Los checkpoints
-v2 incluyen pesos, optimizador, planificador, escalador AMP, orden y cursor de
-muestreo, fase, historial y generadores aleatorios. Los checksums verifican su
-integridad y se conserva una generación anterior. Una ventana interrumpida se
-repite desde el último guardado completo.
+## Sesiones con GPU gratuita
 
-Si una sesión murió y dejó `EN_USO.lock`, confirmar que ya no esté activa antes
-de eliminar exclusivamente ese archivo. No ejecutar dos kernels sobre una misma
-corrida. La reanudación CUDA requiere una cantidad compatible de GPUs.
+1. Disponer de datos, notebook y pesos, y de una carpeta persistente ya montada.
+2. Ejecutar desde el inicio y comprobar integración, AMP y pruebas CUDA.
+3. En la configuración de etapas finales, definir `RUTA_PERSISTENTE` y conservar
+   `ETIQUETA_ESTUDIO = "principal_particiones_v2_s42"`.
+4. Elegir uno o varios `MODELOS_A_EJECUTAR`. Los valores posibles son `cnn_ssd`,
+   `yolo_scratch`, `yolo_coco` y `fasterrcnn_coco`.
+5. Activar `EJECUTAR_ENTRENAMIENTOS`. `LIMITE_SESION_HORAS = 2.0` pausa el bucle
+   de entrenamiento con checkpoint; calibración, pruebas y evaluación se suman
+   por separado. No exige una sesión continua de seis horas.
+6. Retomar con la misma ruta, etiqueta, código y configuraciones. La pausa por
+   sesión se distingue del presupuesto acumulado de seis horas por modelo.
 
-Para cambiar código experimental o parámetros después del cierre, usar otra
-`ETIQUETA_ESTUDIO`. Los botones, rutas, comentarios y salidas no alteran la huella
-semántica del código de funciones y modelos.
+La primera preparación calibra los cuatro modelos, incluyendo fase congelada y
+fine-tuning. Fija el batch común y el software en `protocolo_estudio.json`. Una GPU
+de otra familia debe admitir ese batch; no se cambia automáticamente al reanudar.
+Las sesiones registran versiones, hardware y fecha. No ejecutar dos kernels sobre
+la misma corrida. Si quedó `EN_USO.lock`, comprobar que la sesión haya muerto antes
+de retirar solo ese archivo.
 
-## Resultados y alcance
+## Evaluación y cierre
 
-Los artefactos de las etapas nuevas se agrupan en `etapas_3_5/`, o en la ruta
-persistente configurada: entrenamientos, comparación y robustez. Los diagnósticos
-locales se guardan en `resultados_etapas_1_2/etapas_3_5/diagnosticos/`.
+- `EJECUTAR_COMPARACION`: exige los cuatro modelos, cierra checkpoint/umbral con
+  validación y evalúa test. Genera tablas globales y por clase, errores, ocho
+  imágenes comunes, curvas, mapas de AP y calidad/costo en una sesión de hardware.
+- `EJECUTAR_ROBUSTEZ`: evalúa el ganador de validación con limpio y seis
+  degradaciones, sin reajustes. Si otro modelo lidera test, genera su análisis
+  secundario en una carpeta distinta, conservando el ganador principal.
+- `EJECUTAR_REPRODUCCION`: inicia otro proceso desde el notebook guardado y los
+  checkpoints; recalcula val/test y contrasta mAP, AP50, P/R/F1 y AP por clase.
+- La matriz `evidencias/estado_rubrica.json` indica qué evidencia falta. No asigna
+  nota ni certifica automáticamente la calidad de la interpretación.
+- `EJECUTAR_EMPAQUETADO`: completar `INTEGRANTES` y `DECLARACION_IA`. Solo habilita
+  el ZIP técnico cuando hay cuatro resultados reales, evaluación, robustez,
+  pruebas CUDA y reproducción. Incluye mejores checkpoints e integridad SHA-256.
+  El dataset se reconstruye desde su fuente y checksum. Diapositivas y video
+  quedan expresamente pendientes, fuera de este paquete técnico.
 
-La máquina local tiene PyTorch para CPU. Las pruebas CUDA omitidas siguen
-pendientes; no acreditan entrenamiento ni precisión mixta en GPU. El estado
-actual se registra en `resultados_etapas_1_2/etapas_3_5/estado_implementacion.json`.
-La tarjeta detectada es una AMD Radeon RX 6600; este entorno no dispone de CUDA.
+## Datos y respaldos
 
-## Revisión de particiones y cachés
+División vigente: **2.051 / 439 / 440 imágenes**, con **26 / 24 / 23 clases
+presentes**. Se mantienen 2.930 imágenes, 6.236 objetos y 14 grupos reasignados.
+Normalización, anclas y pilotos vigentes están bajo `revision_particiones_v2/`.
+La identidad contempla dataset, particiones, train, tamaño y preprocesamiento.
 
-La división vigente se guarda en
-`resultados_etapas_1_2/revision_particiones_v2/particiones/`: **2.051 imágenes
-en train, 439 en validación y 440 en test**, con **26, 24 y 23 clases presentes**,
-respectivamente. Se reasignaron 14 grupos completos desde la división inicial.
-Con tres o más grupos por clase se exige presencia en los tres conjuntos; con
-dos se priorizan train y validación; con uno, train. El manifiesto registra los
-movimientos y las limitaciones de cobertura. Esta política no asegura soportes
-suficientes para estimaciones estables en clases escasas.
+Los originales de la ubicación anterior permanecen intactos. La migración verificó
+por SHA-256 las 2.930 imágenes. El respaldo del notebook previo al cierre está en
+`Material/Tarea_2_antes_cierre_tecnico.ipynb`. No son dependencias de ejecución.
 
-Normalización, anclas y pilotos de la nueva división están dentro de esa misma
-carpeta de revisión. La identidad incluye dataset, particiones, IDs de train,
-tamaño y preprocesamiento. Los pilotos incluyen además la normalización en su
-identidad, guardada tanto en el informe como en el checkpoint. Las cachés
-anteriores sin esos campos se recalculan.
-
-Los resultados de la división inicial permanecen en `particiones/`, `pilotos/`
-y `memorizacion_cnn/` bajo `resultados_etapas_1_2/`. No se usan para describir
-la división vigente. El notebook anterior a esta intervención está en
-`Material/Tarea_2_antes_reequilibrio.ipynb`. El estudio principal nuevo se llama
-`principal_particiones_v2_s42`.
-
-La calibración solo reutiliza mediciones cuya identidad coincide en datos,
-configuraciones, código y hardware. Los pesos empleados para medir recursos no
-se usan para inicializar el entrenamiento principal. Los análisis junto a
-particiones, estadísticas, anclas y pilotos se calculan desde sus informes
-actuales al ejecutar el notebook.
-
-El notebook conserva los datos auditados y particiones comunes. Las métricas de
-pilotos, entrenamientos principales y pruebas sintéticas se distinguen de forma
-explícita. Los resultados de test no se usan para reajustar los modelos.
-
-Hay un respaldo anterior a las nuevas etapas en
-`Material/Tarea_2_antes_etapas_3_5.ipynb`.
+Para cambiar código experimental después de entrenar o cerrar decisiones, usar
+otra etiqueta de estudio. Las rutas, interruptores, duración de sesión, integrantes
+y textos de justificación no modifican la huella semántica de las funciones.

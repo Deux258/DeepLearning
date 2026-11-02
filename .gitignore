@@ -7,3 +7,4 @@ artifacts/
 *.pt
 *.pth
 *.zip
+/resultados_etapas_1_2/

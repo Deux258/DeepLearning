@@ -15,7 +15,7 @@ Fuente vigente: `Tarea_2.ipynb` y
 - Integración de los cuatro detectores comprobada en CPU; pilotos reales renovados.
 - Memorización CNN, cien pasos sobre ocho imágenes: **AP50 0.7733**,
   **mAP50–95 0.4696**. No mide generalización.
-- Pruebas: **30 aprobadas y 2 CUDA omitidas**.
+- Pruebas: **40 aprobadas y 2 CUDA omitidas**.
 - GPU local: AMD Radeon RX 6600; este entorno no dispone de CUDA.
 - Calibración por fase implementada; actualización de pesos antes congelados comprobada
   en CPU y cambio a batch 1 ante OOM validado con un caso simulado.
@@ -26,3 +26,5 @@ Los resultados anteriores se conservan en sus carpetas originales bajo
 `resultados_etapas_1_2/`. La revisión activa usa `revision_particiones_v2/`;
 el estudio principal se llama `principal_particiones_v2_s42`.
 La carpeta `docs` no es una dependencia del notebook.
+
+El cierre técnico y sus controles están implementados; ver `docs/CIERRE_TECNICO.md`.
