@@ -1,75 +1,119 @@
-# Tarea 2 — notebook y cierre técnico
+# Tarea 2 — notebook integrado
 
-La versión oficial está en esta carpeta. **Todo el código del flujo permanece en
-`Tarea_2.ipynb`**: auditoría, particiones, pruebas, entrenamiento recuperable,
-comparación, robustez, reproducción y empaquetado. `docs/` no es una dependencia.
-No se prepararon diapositivas ni video en esta intervención.
+El archivo ejecutable y de entrega es **`Tarea_2.ipynb`**. Contiene el flujo previo,
+el aporte original de Ignacio Pastén y los dos entrenamientos COCO. Los datos y
+checkpoints se guardan aparte; no depende de `prueba.py`, `docs/` ni de los otros notebooks.
+La versión de fase 1 tiene 106 celdas en total, con la biblioteca técnica plegada
+y las acciones de cada sesión separadas en el cuerpo del notebook.
 
-## Ejecución local
+## Qué se conserva
 
-Abrir el notebook desde esta carpeta y seleccionar un Python con las dependencias
-indicadas en su configuración. `RUTA_PROYECTO` permite indicar otra raíz si el
-kernel parte desde una carpeta distinta. El notebook no depende de una `.venv`
-específica ni de módulos Python del proyecto.
+- División original **2.022/454/454**, huella `fc946375…`, sobre 2.930 imágenes
+  y 6.236 objetos. El reequilibrio posterior se conserva como estudio histórico.
+- CNN y YOLO desde cero de Ignacio: **diez épocas, batch 2 y entrenador original**.
+  No se les agregan aumentos ni se cambia la configuración al reanudar.
+- Fuentes históricas completas en `metadata.tarea2_legado`, con hashes SHA-256.
+  Se reconstruyen temporalmente; no requieren el notebook de Ignacio para ejecutar.
+- Auditoría, normalización y anclas en `resultados_etapas_1_2/integracion_nacho_s42/`.
+  El manifiesto local sirve para inspección; entrenar exige verificar la exportación original.
 
-Los datos están en `data/extracted/`. Los pesos y resultados ya están consolidados
-en `resultados_etapas_1_2/`. Las auditorías se reubican sin cambiar su identidad;
-las referencias COCO/YOLO se regeneran desde los mismos IDs.
+El estudio nuevo se llama **`final_correcciones_s42`**. Las carpetas anteriores y los
+notebooks de respaldo no se sobrescriben. El respaldo de esta intervención es
+`Tarea_2_respaldo_antes_fase1_20261103.ipynb`.
 
-Ejecutar desde el inicio para comprobar CPU, auditoría y pilotos. Las pruebas
-sintéticas son diagnósticos: no se admiten como evaluación final de FjordFish.
-El equipo local tiene AMD Radeon RX 6600 y este PyTorch no dispone de CUDA.
+## Fase 1: preparar y cerrar el protocolo
 
-## Sesiones con GPU gratuita
+Abrir el notebook desde esta carpeta o definir `RUTA_PROYECTO`. Ejecutar desde el
+principio para cargar las funciones y comprobar datos, entorno y pruebas.
+Las acciones largas parten desactivadas.
 
-1. Disponer de datos, notebook y pesos, y de una carpeta persistente ya montada.
-2. Ejecutar desde el inicio y comprobar integración, AMP y pruebas CUDA.
-3. En la configuración de etapas finales, definir `RUTA_PERSISTENTE` y conservar
-   `ETIQUETA_ESTUDIO = "principal_particiones_v2_s42"`.
-4. Elegir uno o varios `MODELOS_A_EJECUTAR`. Los valores posibles son `cnn_ssd`,
-   `yolo_scratch`, `yolo_coco` y `fasterrcnn_coco`.
-5. Activar `EJECUTAR_ENTRENAMIENTOS`. `LIMITE_SESION_HORAS = 2.0` pausa el bucle
-   de entrenamiento con checkpoint; calibración, pruebas y evaluación se suman
-   por separado. No exige una sesión continua de seis horas.
-6. Retomar con la misma ruta, etiqueta, código y configuraciones. La pausa por
-   sesión se distingue del presupuesto acumulado de seis horas por modelo.
+1. **Exportar primero los archivos pequeños de Ignacio** desde su carpeta RUN_ID:
 
-La primera preparación calibra los cuatro modelos, incluyendo fase congelada y
-fine-tuning. Fija el batch común y el software en `protocolo_estudio.json`. Una GPU
-de otra familia debe admitir ese batch; no se cambia automáticamente al reanudar.
-Las sesiones registran versiones, hardware y fecha. No ejecutar dos kernels sobre
-la misma corrida. Si quedó `EN_USO.lock`, comprobar que la sesión haya muerto antes
-de retirar solo ese archivo.
+   ```text
+   preparacion/curacion/audit.json
+   preparacion/particiones/manifest.json
+   preparacion/particiones/train_statistics.json
+   codigo/                                  # cuatro fuentes originales
+   experimentos/cnn_ssd/experiment.json
+   experimentos/yolo_scratch/experiment.json
+   ```
 
-## Evaluación y cierre
+   Definir `RUTA_APORTE_IGNACIO`, `MANIFIESTO_COMPARTIDO` y `RUTA_PERSISTENTE`.
+   Activar `IMPORTAR_CONTRATO_DATOS`. Se verifican imágenes, IDs, grupos, etiquetas,
+   normalización, configuraciones y fuentes sin exigir los checkpoints grandes.
 
-- `EJECUTAR_COMPARACION`: exige los cuatro modelos, cierra checkpoint/umbral con
-  validación y evalúa test. Genera tablas globales y por clase, errores, ocho
-  imágenes comunes, curvas, mapas de AP y calidad/costo en una sesión de hardware.
-- `EJECUTAR_ROBUSTEZ`: evalúa el ganador de validación con limpio y seis
-  degradaciones, sin reajustes. Si otro modelo lidera test, genera su análisis
-  secundario en una carpeta distinta, conservando el ganador principal.
-- `EJECUTAR_REPRODUCCION`: inicia otro proceso desde el notebook guardado y los
-  checkpoints; recalcula val/test y contrasta mAP, AP50, P/R/F1 y AP por clase.
-- La matriz `evidencias/estado_rubrica.json` indica qué evidencia falta. No asigna
-  nota ni certifica automáticamente la calidad de la interpretación.
-- `EJECUTAR_EMPAQUETADO`: completar `INTEGRANTES` y `DECLARACION_IA`. Solo habilita
-  el ZIP técnico cuando hay cuatro resultados reales, evaluación, robustez,
-  pruebas CUDA y reproducción. Incluye mejores checkpoints e integridad SHA-256.
-  El dataset se reconstruye desde su fuente y checksum. Diapositivas y video
-  quedan expresamente pendientes, fuera de este paquete técnico.
+2. **Usar CUDA y software compatible con el aporte original.** Ejecutar las pruebas
+   iniciales y avanzadas, incluidas recuperación CUDA y AMP en frozen/finetune.
+   CPU permite diagnosticar, pero no acredita la preparación GPU ni cierra el protocolo.
 
-## Datos y respaldos
+3. **Activar `EJECUTAR_PERFIL_GPU`** en la sección 9. Se miden cuatro épocas completas:
+   dos modelos COCO × dos fases. Incluye train, validación, métricas y guardado real.
+   Fija batch físico común 2 o 1 y acumulación hasta batch efectivo 8, sin alterar a Ignacio.
 
-División vigente: **2.051 / 439 / 440 imágenes**, con **26 / 24 / 23 clases
-presentes**. Se mantienen 2.930 imágenes, 6.236 objetos y 14 grupos reasignados.
-Normalización, anclas y pilotos vigentes están bajo `revision_particiones_v2/`.
-La identidad contempla dataset, particiones, train, tamaño y preprocesamiento.
+4. **Revisar la propuesta antes de cerrar.** Los valores iniciales nativos son:
+   YOLO COCO máximo 20 épocas; Faster R-CNN máximo 15; ambos cinco congeladas,
+   seis horas, paciencia cinco desde la época diez. Se reserva 10 % de margen.
+   Las épocas definitivas se calculan con los segundos medidos por fase. Si no
+   alcanzan diez épocas, el cierre se bloquea para revisar el presupuesto.
+   Cambiar solo épocas, horas o criterios de parada reutiliza el perfil;
+   cambiar código, software, datos, aumentos o recursos obliga a medir nuevamente.
 
-Los originales de la ubicación anterior permanecen intactos. La migración verificó
-por SHA-256 las 2.930 imágenes. El respaldo del notebook previo al cierre está en
-`Material/Tarea_2_antes_cierre_tecnico.ipynb`. No son dependencias de ejecución.
+5. **Activar `CERRAR_PROTOCOLO`** tras revisar la tabla. Guarda las configuraciones
+   definitivas y sus identidades. Desde ese momento conservar código y entorno.
+   Los textos en Markdown y los interruptores pueden cambiar.
 
-Para cambiar código experimental después de entrenar o cerrar decisiones, usar
-otra etiqueta de estudio. Las rutas, interruptores, duración de sesión, integrantes
-y textos de justificación no modifican la huella semántica de las funciones.
+6. **Crear workers separados**, mediante `CREAR_PLANTILLA_WORKER` y nombres distintos
+   en `NOMBRE_WORKER`. El coordinador conserva el estudio central. Cada integrante
+   recibe el mismo notebook y plantilla cerrada. En su sesión configura `ROL_SESION = "worker"`
+   y el `NOMBRE_WORKER` asignado: sus informes y registros también quedan separados del coordinador.
+
+## Fase 2: entrenar y consolidar
+
+- Diego: `MODELOS_A_EJECUTAR = ["yolo_coco"]`.
+- Tercer integrante: `MODELOS_A_EJECUTAR = ["fasterrcnn_coco"]`.
+- Ignacio: importar los checkpoints originales con `IMPORTAR_IGNACIO` y continuar
+  lo pendiente con `REANUDAR_IGNACIO`. Recupera épocas completas; una época
+  histórica interrumpida se repite, conservando su formato, software y hardware.
+
+Los entrenamientos nativos escriben en `RAIZ_WORKER`, nunca simultáneamente en la
+misma carpeta. `LIMITE_SESION_HORAS = 2` guarda y pausa; **se debe ejecutar nuevamente
+la celda para retomar**. Los tiempos por época separan train/validación/guardado
+y no suman la desconexión. Los tiempos históricos mantienen su definición original.
+
+El coordinador indica `RUTAS_WORKERS_A_IMPORTAR` y activa `IMPORTAR_CORRIDAS_NATIVAS`.
+El importador comprueba protocolo, software, configuración, datos, código, informes
+y checkpoints antes de publicar una copia. Una copia idéntica se reutiliza;
+un destino diferente se rechaza sin sobrescribir. Consolidar preferentemente las
+corridas terminadas: una importación pausada no se actualiza encima de la anterior.
+La prueba de transferencia previa usa fixtures temporales, sin ocupar las carpetas finales.
+
+## Comparación y entrega técnica
+
+1. Reunir los cuatro modelos completos. Los COCO deben acreditar épocas completas
+   de frozen y finetune antes del test.
+2. Activar `EJECUTAR_COMPARACION`: reproducir validación histórica de Ignacio con
+   batch 2; seleccionar umbrales y ganador con validación común; evaluar el mismo
+   test y medir latencia/memoria en una misma GPU.
+3. Activar `EJECUTAR_ROBUSTEZ`: limpio y seis degradaciones, con los mismos pesos,
+   umbral e IDs. Incluye métricas por clase y tamaño, caídas y ejemplos pareados.
+4. Ejecutar `EJECUTAR_REPRODUCCION` en un proceso nuevo. Revisar los análisis con
+   cifras reales y la matriz de evidencias; no tratar borradores automáticos como conclusiones.
+5. Completar el tercer integrante y la declaración de herramientas antes de
+   `EJECUTAR_EMPAQUETADO`. El paquete incorpora manifiesto, listas de IDs, tablas,
+   gráficos, código, checkpoints y comprobación de integridad.
+
+Solo train nativo recibe reflexión p=0,5 y fotometría p=0,5, con brillo, contraste
+y saturación entre 0,85 y 1,15. Val/test son deterministas. El oscurecimiento de robustez
+es más fuerte; considerar la exposición al brillo al interpretar los resultados.
+Ignacio mantiene otro régimen de entrenamiento: la comparación con COCO **no aísla
+causalmente el preentrenamiento**. Una semilla no acredita superioridad estadística.
+
+AP por tamaño sigue los rangos COCO en píxeles originales: small [0,32²], medium
+[32²,96²], large [96²,1e10]. Los bordes son inclusivos y se solapan; no sumar los
+soportes como grupos disjuntos. Sin GT, AP es no definida. No equivale a área relativa
+ni al tamaño de la caja después de redimensionar a 512.
+
+Las pruebas sintéticas verifican implementación, no rendimiento real en FjordFish.
+Este equipo Windows no tiene CUDA: perfil, pruebas GPU y entrenamientos siguen
+pendientes hasta ejecutarlos en un entorno compatible. **Diapositivas y video
+permanecen fuera de esta intervención.**
