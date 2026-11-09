@@ -1,53 +1,93 @@
-# Tarea 2 — notebook preparado para ejecutar localmente
+# Tarea 2 — tres notebooks para Colab con GPU
 
-Archivo principal: **Tarea_2.ipynb**, con **94 celdas en total, 76 de código**.
-Esta preparación no ejecutó el notebook ni inició entrenamientos. El proceso anterior
-quedó detenido, con checkpoints en disco.
+La versión reorganizada se ejecuta en este orden:
 
-## Ejecutar cuando corresponda
+1. [Parte 1: modelos desde cero](Tarea_2_Parte_1.ipynb): preparar datos y entrenar CNN propia + SSD y YOLO11n.
+2. [Parte 2: transferencia](Tarea_2_Parte_2.ipynb): entrenar YOLO11n COCO y Faster R-CNN; comparar los cuatro en test.
+3. [Parte 3: robustez](Tarea_2_Parte_3.ipynb): evaluar el ganador con iluminación, desenfoque y ruido.
 
-1. En local: abrir el notebook en VS Code o Jupyter, desde esta carpeta y usar el kernel
-   `.venv/Scripts/python.exe` del proyecto.
-2. En Colab: abrir la notebook desde el repositorio o desde Drive. La primera celda automática
-   detecta el entorno, monta Drive si existe y, si no encuentra el proyecto, clona el repositorio
-   desde GitHub en `/content/DeepLearning`.
-3. En la primera celda de configuración elegir `ACCION_LOCAL`:
-   - `"revisar"` (predeterminado): revisar datos y resultados; no entrena ni descarga pesos COCO.
-   - `"entrenar_base"`: iniciar o retomar las diez épocas base de CNN y YOLO.
-   - `"ajustar"`: validar las bases y retomar las ramas de ajuste que correspondan.
-4. Ejecutar de arriba hacia abajo. Las funciones auxiliares están agrupadas y plegadas;
-   cada celda imprime qué hace, su número de avance y el tiempo utilizado.
+Cada archivo incluye su código y abre en un kernel nuevo. **No necesita importar módulos del repositorio ni leer `Tarea_2.ipynb`.**
+Los tres usan la misma `RUTA_PROYECTO` y `ETIQUETA_ESTUDIO`; comparten datos y resultados en Drive.
 
-`RUTA_PROYECTO=None` usa la carpeta del kernel. En Colab, la detección automática reemplaza la
-edición manual de la ruta en la mayoría de los casos. Se mantienen ocho hilos CPU. La instalación
-automática de dependencias queda habilitada cuando faltan paquetes.
+En Colab, seleccionar un runtime **GPU**. Por defecto se monta Drive en `MyDrive/Tarea2_DL`,
+las imágenes se extraen en `/content/fjordfish_datos` y el nuevo estudio se guarda en
+`resultados_tres_partes/colab_gpu_tres_partes_v1_s42/`. Los estudios antiguos permanecen intactos.
 
-## Avance conservado al preparar esta versión
+**Entrenamiento y evaluación activados en Partes 1 y 2.** Abrir Parte 1 en Colab con GPU y usar
+**Ejecutar todo**; al terminar, hacer lo mismo con Parte 2. La Parte 1 prepara primero el contrato de datos.
+`EJECUTAR_ENTRENAMIENTO=True` inicia o retoma los modelos de cada parte.
+Antes de cada corrida nueva, el código exige superar el diagnóstico de ocho imágenes de train
+y calibra batch/AMP en GPU. La evaluación posterior ya está habilitada con `EJECUTAR_EVALUACION=True`.
+En Parte 3 activar `EJECUTAR_ROBUSTEZ=True`. No hay límite horario; se termina por épocas o paciencia.
+No ejecutar simultáneamente dos sesiones sobre el mismo modelo y estudio.
 
-- CNN y YOLO base: diez épocas terminadas por modelo.
-- Ajuste CNN: seis épocas adicionales completas; retoma desde la adicional siete.
-- Ajuste YOLO: todavía sin iniciar.
-- Test sigue reservado. No hay un entrenamiento ni un publicador externo activo.
+El nuevo protocolo utiliza 60 épocas máximas desde cero y 30 COCO (cinco congeladas),
+batch efectivo 8, warmup, coseno, clipping y aumentos moderados. No se garantiza una mejora
+antes de ejecutar los experimentos. Test se reserva hasta cerrar modelos y umbrales con validación.
+Una instalación de PyTorch solo CPU impide iniciar los entrenamientos principales.
 
-Estudio: `resultados_etapas_1_2/etapas_3_5/local_cpu_s42/`.
-Las bases están en `parte1_nueva/experimentos/` y las variantes en
-`ajustes_locales/coseno_hflip_20ep/`. Se guardan `best.pt`, `last.pt`, historial,
-configuración, fuentes, procedencia, tablas y gráficos. Nunca ejecutar dos sesiones
-sobre la misma carpeta. Se recupera la última época completa.
+Ver [diagnóstico y revisión de la rúbrica](docs/Diagnostico_Tarea_2.md).
+La verificación reproducible está en `tools/tarea2/verify_notebooks.py`; el generador de desarrollo
+`tools/tarea2/build_notebooks.py` permite reconstruir los tres archivos. Esos scripts **no se suben a Colab**
+ni son dependencias de ejecución de los notebooks.
 
-## Qué se conserva
+## Instrucciones conservadas del notebook original
 
-Los IDs compartidos son 2022/454/454, huella `fc946375…`. La biblioteca científica,
-los modelos, optimizadores, evaluador y fuentes originales no cambiaron al compactar.
-La huella del protocolo continúa siendo `5b55ab5a…`, compatible con los checkpoints.
-Las salidas guardadas están rotuladas como evidencia de ejecuciones anteriores.
+# Tarea 2 — flujo completo desde el notebook, CPU o CUDA
 
-El ajuste usa AdamW 3e-4→3e-5 por coseno, clipping L2 a 10 y reflexión horizontal,
-con hasta veinte épocas adicionales. Las fuentes oficiales y justificaciones están
-en la sección 8.1. Las comprobaciones previas del motor están registradas; durante
-esta preparación solo se revisaron sintaxis, estructura, controles e identidad.
+Archivo: **Tarea_2.ipynb**, 95 celdas. Para iniciar:
 
-Los controles COCO, GPU, comparación, robustez y empaquetado siguen disponibles y
-separados, pero desactivados. CPU no acredita CUDA. Diapositivas y video quedan fuera.
+1. Reiniciar el kernel/runtime.
+2. Dejar en la primera celda `ACCION_LOCAL="completo"`, `MODO_EJECUCION="auto"`,
+   `DISPOSITIVO_PARTE1="auto"` y `ETIQUETA_ESTUDIO=None`.
+3. Usar **Ejecutar todo**. No activar individualmente todos los interruptores.
 
-Respaldo: `Tarea_2_respaldo_antes_preparar_local_20261104_105841.ipynb`.
+Al no detectar CUDA, se usa CPU float32 para los cuatro modelos, la calibración,
+comparación, robustez y reproducción en un proceso nuevo. AMP se desactiva en CPU.
+CUDA permanece como alternativa cuando está disponible; nunca se declara aprobada
+una prueba CUDA omitida. La CPU local no se hace pasar por una GPU.
+
+## Estudio nuevo y recuperación
+
+La ampliación cambia el protocolo científico. El estudio automático se llama, por
+ejemplo, `local_cpu_integral_v2_s42` o `colab_cuda_integral_v2_s42`. Las ejecuciones
+posteriores con la misma etiqueta retoman sus checkpoints. Para comenzar otro
+experimento desde cero, indicar otra etiqueta; no se borran resultados anteriores.
+Las corridas antiguas siguen en `local_cpu_s42`, junto con sus respaldos del notebook.
+
+CNN/YOLO base mantienen diez épocas, batch 2 y el motor original adjunto. Los dos
+modelos COCO usan ambas fases; en CPU se calibra batch físico 1 con acumulación 8.
+La calibración mide una época real por fase antes de fijar las épocas. El tope por
+modelo es 24 horas CPU o 6 CUDA, configurable en `HORAS_MAXIMAS_POR_MODELO`; no obliga
+a consumir todo ese tiempo. No hay un corte adicional de cinco horas por sesión.
+Faster R-CNN en CPU puede necesitar muchas horas. Los cortes por presupuesto se
+registran y el cierre no consulta test mientras falten modelos o fases.
+
+## Acciones
+
+`revisar`, `entrenar_base`, `ajustar`, `coco`, `comparar`, `robustez`, `entrega` y
+`completo` activan solamente sus etapas. El ajuste de veinte épocas adicionales es
+una opción CPU separada; no altera automáticamente las bases de la comparación.
+Los interruptores antiguos PREPARAR/ENTRENAR_PARTE1_NUEVA están apagados para evitar
+lanzar una segunda corrida CUDA después de una base CPU.
+
+## Local y Colab
+
+Localmente seleccionar `.venv/Scripts/python.exe`. Si el kernel abre fuera del
+proyecto, indicar `RUTA_PROYECTO`. En Colab se monta Drive y se localiza esta copia
+Tarea_2.ipynb; las imágenes se extraen en /content/fjordfish_datos y los checkpoints
+se guardan en Drive. No es necesario ejecutar scripts externos ni clonar repositorios.
+Los mismos IDs 2022/454/454 se usan en todos los modelos.
+
+El cierre exige las pruebas del dispositivo utilizado y reproducción aislada de los
+cuatro modelos. En CPU solo se admiten omisiones explícitas de pruebas CUDA. La memoria
+CUDA se registra como no aplicable; el perfil no inventa un pico de memoria RAM.
+La procedencia del dataset se toma de su carpeta real, también al empaquetar en Colab.
+
+Las comprobaciones de desarrollo usan fixtures sintéticas temporales. No son resultados
+ni entrenamientos principales de FjordFish. Los reportes de esta corrección están en
+`resultados_etapas_1_2/etapas_3_5/diagnosticos/cpu_integral_v2/`. La edición no lanzó las
+corridas largas. Se creó un respaldo anterior `Tarea_2_respaldo_antes_cpu_integral_*.ipynb`.
+Diapositivas y video siguen fuera de esta intervención.
+
+Validación final: 79 casos, 76 aprobados y 3 omisiones CUDA explícitas; cero errores. El archivo `suite_completa.json` registra la revisión compatible con el código actual.

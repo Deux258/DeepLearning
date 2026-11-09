@@ -1,0 +1,32 @@
+{
+  "alcance": "Preparación real del dataset sin entrenamientos; salida temporal independiente",
+  "imagenes": 2930,
+  "objetos": 6236,
+  "particiones": {
+    "test": 454,
+    "train": 2022,
+    "val": 454
+  },
+  "dataset_fingerprint": "e85d263d6aec2ae5164ea7379fd41b5f10636c5d712be1da17f6892a1e200ca9",
+  "normalizacion": {
+    "mean": [
+      0.3233351797217339,
+      0.5023095937034314,
+      0.38020577979937514
+    ],
+    "std": [
+      0.19369579897640418,
+      0.1855088411337578,
+      0.18635115162384583
+    ],
+    "split": "train",
+    "size": 512,
+    "images": 2022,
+    "pixels": 530055168,
+    "dataset_fingerprint": "e85d263d6aec2ae5164ea7379fd41b5f10636c5d712be1da17f6892a1e200ca9",
+    "partitions_fingerprint": "fc946375c90aed0c484e9eba9e9aacae6d3004b5b0826bd9bc4c7a16d0126409",
+    "training_fingerprint": "5cac684b792e9c8d124a2218889963cea4cb448ee43cb4d3e18c571dc4da1abe",
+    "preprocessing": "rgb_letterbox_bilinear_fill114_round_v1"
+  },
+  "version": "20d4f240f134121874cc3036c31f45b9849c63c2293e1ad5f94988dd9710ab3a"
+}

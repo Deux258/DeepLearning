@@ -1,0 +1,66 @@
+{
+  "cnn_ssd": {
+    "alcance": "diagnostico_ocho_imagenes_train_no_validacion_ni_test",
+    "modelo": "cnn_ssd",
+    "imagenes": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      8,
+      9
+    ],
+    "pasos": 300,
+    "dispositivo": "cpu",
+    "ap50_inicial": 0.0,
+    "ap50_final": 0.9280204782030282,
+    "perdida_inicial": 16.26670551300049,
+    "perdida_final": 0.04330187309533358,
+    "aprobado": true,
+    "version": "20d4f240f134121874cc3036c31f45b9849c63c2293e1ad5f94988dd9710ab3a",
+    "configuracion": "7dc8c9e5724577123f044d66c4200da551fcb5eab7e97a1ecb6822e1a6f2889a",
+    "datos": "e85d263d6aec2ae5164ea7379fd41b5f10636c5d712be1da17f6892a1e200ca9",
+    "software": {
+      "torch": "2.14.1",
+      "torchvision": "0.29.1",
+      "ultralytics": "8.4.174",
+      "numpy": "2.5.4",
+      "Pillow": "13.0.0",
+      "pycocotools": "2.0.11"
+    }
+  },
+  "yolo_scratch": {
+    "alcance": "diagnostico_ocho_imagenes_train_no_validacion_ni_test",
+    "modelo": "yolo_scratch",
+    "imagenes": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      8,
+      9
+    ],
+    "pasos": 300,
+    "dispositivo": "cpu",
+    "ap50_inicial": 0.0,
+    "ap50_final": 0.6840024661806839,
+    "perdida_inicial": 13.845367622375488,
+    "perdida_final": 1.4085350513458252,
+    "aprobado": true,
+    "version": "20d4f240f134121874cc3036c31f45b9849c63c2293e1ad5f94988dd9710ab3a",
+    "configuracion": "edd8512dae9cce227caea016f40c1f4d28531b5fd8897cc82354210f7f9d2307",
+    "datos": "e85d263d6aec2ae5164ea7379fd41b5f10636c5d712be1da17f6892a1e200ca9",
+    "software": {
+      "torch": "2.14.1",
+      "torchvision": "0.29.1",
+      "ultralytics": "8.4.174",
+      "numpy": "2.5.4",
+      "Pillow": "13.0.0",
+      "pycocotools": "2.0.11"
+    }
+  }
+}

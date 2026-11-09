@@ -1,0 +1,19 @@
+{
+  "settings_version": "0.0.8",
+  "datasets_dir": "C:\\Users\\diego\\Documents\\GitHub\\datasets",
+  "weights_dir": "C:\\Users\\diego\\Documents\\GitHub\\DeepLearning\\weights",
+  "runs_dir": "C:\\Users\\diego\\Documents\\GitHub\\DeepLearning\\runs",
+  "uuid": "f49addafce1eb17752269b15f9ee9c4164fdaa566b12db130c03510562ca7d6f",
+  "sync": true,
+  "api_key": "",
+  "openai_api_key": "",
+  "clearml": true,
+  "comet": true,
+  "dvc": true,
+  "mlflow": true,
+  "raytune": true,
+  "tensorboard": false,
+  "wandb": false,
+  "vscode_msg": true,
+  "openvino_msg": true
+}
