@@ -36,7 +36,7 @@ def graficar_historial(nombre):
 def comparar_disponibles(nombres, split='val'):
     import matplotlib.pyplot as plt
     filas = []
-    gpu = None
+    dispositivo_medicion = None
     for nombre in nombres:
         ruta = RAIZ_ESTUDIO / 'evaluacion' / nombre / ('validacion.json' if split == 'val' else 'test.json')
         if not ruta.is_file():
@@ -45,9 +45,9 @@ def comparar_disponibles(nombres, split='val'):
         r = leer_json(ruta)
         if split == 'test':
             actual = (r['dispositivo'], r.get('gpu'), r['software'])
-            if gpu is not None and actual != gpu:
+            if dispositivo_medicion is not None and actual != dispositivo_medicion:
                 raise ValueError('Reevaluar test en el mismo dispositivo/software para comparar tiempos')
-            gpu = actual
+            dispositivo_medicion = actual
         estado = leer_json(RAIZ_ESTUDIO / 'modelos' / nombre / 'estado.json')
         filas.append(dict(modelo=nombre, split=split, **resumen_metricas(r['metricas']),
                           epocas=estado['epoca'], mejor_epoca=estado['mejor_epoca'],
@@ -73,7 +73,8 @@ def comparar_disponibles(nombres, split='val'):
 
 
 # %% Robustez pareada, sin recalibración
-def ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, dispositivo='cuda', nombre=None):
+def ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, dispositivo=None, nombre=None):
+    dispositivo = dispositivo or DISPOSITIVO_EJECUCION
     nombre = nombre or cierre['ganador_validacion']
     if cierre['datos'] != huella_dataset(auditoria) or cierre['particiones'] != huella_particiones(manifiesto['partitions']):
         raise ValueError('El cierre no corresponde a estos datos')

@@ -11,13 +11,14 @@ def entorno_actual():
             ('torch', 'torchvision', 'ultralytics', 'numpy', 'Pillow', 'pycocotools')}
 
 
-def exigir_gpu():
-    if not torch.cuda.is_available() or torch.version.cuda is None:
+def exigir_dispositivo(dispositivo=None):
+    dispositivo = dispositivo or DISPOSITIVO_EJECUCION
+    if dispositivo == 'cpu':
+        return 'cpu'
+    if dispositivo != 'cuda' or not torch.cuda.is_available() or torch.version.cuda is None:
         raise RuntimeError(
-            'Entrenamiento principal detenido: PyTorch no tiene CUDA disponible. '
-            'En Colab selecciona Entorno de ejecución > Cambiar tipo > GPU. '
-            'Si torch termina en +cpu, instala la pareja CUDA de torch/torchvision '
-            'compatible con ese runtime y reinicia la sesión antes de continuar.')
+            'Se solicitó CUDA pero no está disponible. Cambia DISPOSITIVO_EJECUCION a "auto" o "cpu", '
+            'o instala PyTorch con CUDA y reinicia el kernel.')
     # Comprobar operaciones de detección, no solamente la presencia del dispositivo.
     from torchvision.ops import nms
     nms(torch.tensor([[0., 0., 2., 2.]], device='cuda'),
@@ -96,7 +97,8 @@ def configuracion_modelo(nombre):
                 epocas_congeladas=5 if coco else 0, minimo_epocas=15 if coco else 20,
                 paciencia=10, tasa=1e-3, tasa_fina=1e-4, weight_decay=1e-4,
                 batch_efectivo=8, warmup_epocas=3, lr_final_factor=.01,
-                clip_norm=10., amp=True, aumento=politica_aumento(),
+                clip_norm=10., dispositivo=DISPOSITIVO_EJECUCION,
+                amp=DISPOSITIVO_EJECUCION == 'cuda', aumento=politica_aumento(),
                 guardar_cada_pasos=50)
 
 
@@ -124,7 +126,7 @@ def validar_configuracion(c):
 def identidad_corrida(c, auditoria, manifiesto, estadisticas):
     return dict(version=VERSION_MOTOR, configuracion=c,
                 datos=huella_dataset(auditoria), particiones=huella_particiones(manifiesto['partitions']),
-                normalizacion=huella(estadisticas), software=entorno_actual(), dispositivo='cuda')
+                normalizacion=huella(estadisticas), software=entorno_actual(), dispositivo=c['dispositivo'])
 
 
 def guardar_estado(ruta, estado):
@@ -271,19 +273,35 @@ def actualizar_ventana(detector, optimizador, escalador, dataset, indices, batch
 
 
 def calibrar_batch(c, auditoria, manifiesto, estadisticas):
-    exigir_gpu()
+    dispositivo = c['dispositivo']
+    exigir_dispositivo(dispositivo)
     datos = DatosDeteccion(auditoria, manifiesto['partitions']['train'], TAMANO, False)
     # Incluir imágenes densas en el sondeo de memoria de ambas fases.
     orden = sorted(range(len(datos)), key=lambda i: len(datos.rows[i]['annotations']), reverse=True)[:8]
     fases = ['frozen', 'finetune'] if c['epocas_congeladas'] else ['full']
     informe = []
+    if dispositivo == 'cpu':
+        for fase in fases:
+            detector = crear_detector(c['modelo'], len(auditoria['categories']), TAMANO, PESOS_DIR, estadisticas).to('cpu')
+            detector.set_phase(fase)
+            opt = adamw(detector, c['tasa'])
+            scaler = torch.amp.GradScaler('cuda', enabled=False)
+            fila = datos.rows[orden[0]]
+            with Image.open(Path(auditoria['root']) / fila['file_name']) as imagen:
+                detector.predict([imagen.convert('RGB')])
+            paso = actualizar_ventana(detector, opt, scaler, datos, orden[:1], 1, c['clip_norm'])
+            informe.append(dict(batch=1, fase=fase, amp=False, memoria_reservada=None,
+                                perdida=paso['perdida'], valido=True))
+            del detector, opt, scaler
+        return dict(batch_fisico=1, acumulacion=8, fases=informe, gpu=None,
+                    dispositivo='cpu', software=entorno_actual())
     for batch in (8, 4, 2, 1):
         exito = True
         for fase in fases:
             detector = opt = scaler = None
             try:
                 fijar_semilla(c['semilla'])
-                detector = crear_detector(c['modelo'], len(auditoria['categories']), TAMANO, PESOS_DIR, estadisticas).cuda()
+                detector = crear_detector(c['modelo'], len(auditoria['categories']), TAMANO, PESOS_DIR, estadisticas).to(dispositivo)
                 detector.set_phase(fase)
                 opt = adamw(detector, c['tasa'])
                 scaler = torch.amp.GradScaler('cuda', enabled=c['amp'])
@@ -333,10 +351,11 @@ def predecir_ids(detector, auditoria, ids, condicion=None):
     return resultado, time.perf_counter() - inicio
 
 
-def diagnostico_real(c, auditoria, manifiesto, estadisticas, dispositivo='cuda', pasos=300):
+def diagnostico_real(c, auditoria, manifiesto, estadisticas, dispositivo=None, pasos=300):
     """Ocho imágenes de TRAIN, sin aumentos: diagnóstico, nunca métrica final."""
+    dispositivo = dispositivo or c['dispositivo']
     if dispositivo == 'cuda':
-        exigir_gpu()
+        exigir_dispositivo(dispositivo)
     azar = capturar_azar()
     try:
         fijar_semilla(c['semilla'])
@@ -375,7 +394,7 @@ def diagnostico_real(c, auditoria, manifiesto, estadisticas, dispositivo='cuda',
 
 # %% Entrenamiento reanudable sin límite horario
 def entrenar_modelo(c, auditoria, manifiesto, estadisticas, pausar_tras_pasos=None):
-    exigir_gpu()
+    exigir_dispositivo(c['dispositivo'])
     validar_configuracion(c)
     validar_contrato(auditoria, manifiesto, estadisticas)
     carpeta = RAIZ_ESTUDIO / 'modelos' / c['modelo']
@@ -395,9 +414,9 @@ def entrenar_modelo(c, auditoria, manifiesto, estadisticas, pausar_tras_pasos=No
                    and diagnostico.get('configuracion') == huella(c)
                    and diagnostico.get('datos') == huella_dataset(auditoria)
                    and diagnostico.get('software') == entorno_actual()
-                   and diagnostico.get('dispositivo') == 'cuda')
+                    and diagnostico.get('dispositivo') == c['dispositivo'])
         if not vigente:
-            diagnostico = diagnostico_real(c, auditoria, manifiesto, estadisticas)
+            diagnostico = diagnostico_real(c, auditoria, manifiesto, estadisticas, dispositivo=c['dispositivo'])
             guardar_json(archivo_diagnostico, diagnostico)
         if not diagnostico['aprobado']:
             raise RuntimeError('No se logró memorizar ocho imágenes de train. Revisar el diagnóstico antes de entrenar.')
@@ -405,10 +424,11 @@ def entrenar_modelo(c, auditoria, manifiesto, estadisticas, pausar_tras_pasos=No
         guardar_json(carpeta / 'calibracion.json', calibracion)
     else:
         calibracion = guardado['calibracion']
-        if calibracion['gpu'] != torch.cuda.get_device_name(0):
-            raise ValueError('Cambió la GPU. Recalibra en un estudio nuevo para conservar la trazabilidad.')
+        gpu_actual = torch.cuda.get_device_name(0) if c['dispositivo'] == 'cuda' else None
+        if calibracion.get('dispositivo', 'cuda') != c['dispositivo'] or calibracion.get('gpu') != gpu_actual:
+            raise ValueError('Cambió el dispositivo. Usa una etiqueta de estudio nueva para recalibrar.')
     fijar_semilla(c['semilla'])
-    detector = crear_detector(c['modelo'], len(auditoria['categories']), TAMANO, PESOS_DIR, estadisticas).cuda()
+    detector = crear_detector(c['modelo'], len(auditoria['categories']), TAMANO, PESOS_DIR, estadisticas).to(c['dispositivo'])
     datos = DatosDeteccion(auditoria, manifiesto['partitions']['train'], TAMANO, c['aumento'])
     estado = guardado['estado'] if guardado else dict(
         epoca=0, cursor=0, orden=[], pasos=0, fase=fase_actual(c, 0), mejor=-1.,
@@ -416,7 +436,7 @@ def entrenar_modelo(c, auditoria, manifiesto, estadisticas, pausar_tras_pasos=No
         componentes={}, segundos_train=0., segundos_validacion=0., segundos_guardado=0.,
         historial=[], completo=False, motivo=None)
     opt, plan = componentes_entrenamiento(detector, c, estado['fase'], len(datos))
-    scaler = torch.amp.GradScaler('cuda', enabled=c['amp'])
+    scaler = torch.amp.GradScaler('cuda', enabled=c['amp'] and c['dispositivo'] == 'cuda')
     if guardado:
         detector.load_state_dict(guardado['modelo'])
         opt.load_state_dict(guardado['optimizador'])
@@ -456,11 +476,11 @@ def entrenar_modelo(c, auditoria, manifiesto, estadisticas, pausar_tras_pasos=No
             while estado['cursor'] < len(datos):
                 indices = estado['orden'][estado['cursor']:estado['cursor'] + 8]
                 tasa = plan.aplicar()
-                torch.cuda.synchronize()
+                if c['dispositivo'] == 'cuda': torch.cuda.synchronize()
                 inicio = time.perf_counter()
                 paso = actualizar_ventana(detector, opt, scaler, datos, indices,
                                           calibracion['batch_fisico'], c['clip_norm'])
-                torch.cuda.synchronize()
+                if c['dispositivo'] == 'cuda': torch.cuda.synchronize()
                 estado['segundos_train'] += time.perf_counter() - inicio
                 plan.step()
                 estado['cursor'] += len(indices)
@@ -514,7 +534,8 @@ def entrenar_modelo(c, auditoria, manifiesto, estadisticas, pausar_tras_pasos=No
 
 
 # %% Evaluación común y cierre antes de test
-def cargar_mejor(nombre, auditoria, manifiesto, estadisticas, dispositivo='cuda'):
+def cargar_mejor(nombre, auditoria, manifiesto, estadisticas, dispositivo=None):
+    dispositivo = dispositivo or DISPOSITIVO_EJECUCION
     carpeta = RAIZ_ESTUDIO / 'modelos' / nombre
     estado_final = leer_estado(carpeta / 'ultimo.pt')
     if not estado_final['estado']['completo']:
@@ -530,7 +551,8 @@ def cargar_mejor(nombre, auditoria, manifiesto, estadisticas, dispositivo='cuda'
     return detector, saved, estado_final['estado']
 
 
-def evaluar_validacion(nombre, auditoria, manifiesto, estadisticas, dispositivo='cuda'):
+def evaluar_validacion(nombre, auditoria, manifiesto, estadisticas, dispositivo=None):
+    dispositivo = dispositivo or DISPOSITIVO_EJECUCION
     detector, saved, estado = cargar_mejor(nombre, auditoria, manifiesto, estadisticas, dispositivo)
     filas = {f['id']: f for f in auditoria['images']}
     with Image.open(Path(auditoria['root']) / filas[manifiesto['partitions']['val'][0]]['file_name']) as imagen:
@@ -574,7 +596,8 @@ def cerrar_seleccion(auditoria, manifiesto, estadisticas):
     return cierre
 
 
-def evaluar_test(nombre, cierre, auditoria, manifiesto, estadisticas, dispositivo='cuda'):
+def evaluar_test(nombre, cierre, auditoria, manifiesto, estadisticas, dispositivo=None):
+    dispositivo = dispositivo or DISPOSITIVO_EJECUCION
     if cierre['particiones'] != huella_particiones(manifiesto['partitions']) or cierre['datos'] != huella_dataset(auditoria):
         raise ValueError('El cierre pertenece a otros datos')
     detector, _, _ = cargar_mejor(nombre, auditoria, manifiesto, estadisticas, dispositivo)

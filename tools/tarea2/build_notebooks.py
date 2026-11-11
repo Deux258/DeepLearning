@@ -1,7 +1,7 @@
 """Construye notebooks autocontenidos. Solo se usa durante desarrollo, nunca en Colab.
 
 Ejecutar desde el repositorio: .venv/Scripts/python.exe tools/tarea2/build_notebooks.py
-Las arquitecturas y la política de datos se extraen del original sin modificarlo.
+Las arquitecturas y la política de datos se extraen de Parte 1 sin modificarla.
 """
 from pathlib import Path
 import ast
@@ -9,10 +9,13 @@ import hashlib
 import json
 import pprint
 import textwrap
+from cell_status import add_completion_messages
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
-original = json.loads((ROOT / 'Tarea_2.ipynb').read_text(encoding='utf-8'))
+source_path = ROOT / 'Tarea_2_Parte_1.ipynb'
+modern_source = source_path.is_file()
+original = json.loads((source_path if modern_source else ROOT / 'Tarea_2.ipynb').read_text(encoding='utf-8'))
 definitions = {}
 imports = []
 constants = []
@@ -24,7 +27,10 @@ for index, cell in enumerate(original['cells']):
         if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
             start = min([node.lineno] + [d.lineno for d in node.decorator_list])
             definitions[node.name] = ''.join(source.splitlines(keepends=True)[start - 1:node.end_lineno]).rstrip()
-        if index == 5:
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'PARTICIONES_ORIGINALES'
+                                              for t in node.targets):
+            original['metadata']['tarea2_particiones'] = ast.literal_eval(node.value)
+        if index == (4 if modern_source else 5):
             if isinstance(node, (ast.Import, ast.ImportFrom)):
                 imports.append(ast.get_source_segment(source, node))
             if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id in
@@ -108,7 +114,7 @@ def build(part):
         Los tres archivos comparten un contrato de datos y resultados en Drive. Ejecuta primero la preparación
         de la Parte 1; después cada parte funciona desde un kernel nuevo.
 
-        **Uso en Colab:** selecciona un runtime GPU y usa **Ejecutar todo**.
+        **Uso local o en Colab:** `DISPOSITIVO_EJECUCION="auto"` elige CUDA si está disponible y CPU en caso contrario. En CPU el entrenamiento es más lento y AMP se desactiva.
         {'El entrenamiento y la evaluación están activados; se retoman los checkpoints compatibles.' if part in (1, 2) else 'Activa EJECUTAR_ROBUSTEZ cuando hayas completado las Partes 1 y 2.'}
         Los estados pendientes se muestran como pendientes, nunca como resultados cero.
 
@@ -121,7 +127,9 @@ def build(part):
         PARTE = {part}
         # Misma carpeta y etiqueta en los tres notebooks. Cambiar etiqueta crea otro estudio.
         RUTA_PROYECTO = None  # None: MyDrive/Tarea2_DL en Colab; carpeta actual en local.
-        ETIQUETA_ESTUDIO = 'colab_gpu_tres_partes_v1_s42'
+        VERSION_NOTEBOOK = '2026-11-09-colab-cpu-v3'
+        DISPOSITIVO_EJECUCION = 'auto'  # 'auto', 'cpu' o 'cuda'.
+        ETIQUETA_ESTUDIO = 'tres_partes_auto_v2_s42'
         EJECUTAR_ENTRENAMIENTO = {part in (1, 2)}
         EJECUTAR_DIAGNOSTICO = False  # Diagnóstico de 300 pasos sobre ocho imágenes de train.
         EJECUTAR_EVALUACION = {part in (1, 2)}
@@ -131,7 +139,8 @@ def build(part):
         SEED, TAMANO = 42, 512
         VERSION_MOTOR = {VERSION!r}
 
-        EN_COLAB = importlib.util.find_spec('google.colab') is not None if importlib.util.find_spec('google') else False
+        EN_KAGGLE = Path('/kaggle/input').is_dir() and Path('/kaggle/working').is_dir()
+        EN_COLAB = not EN_KAGGLE and (importlib.util.find_spec('google.colab') is not None if importlib.util.find_spec('google') else False)
         if EN_COLAB:
             from google.colab import drive
             drive.mount('/content/drive', force_remount=False)
@@ -143,8 +152,11 @@ def build(part):
         DATASET_DIR = DATA_DIR / 'extracted'
         PESOS_DIR = RAIZ_ESTUDIO / 'pesos_coco'
         RAIZ_ESTUDIO.mkdir(parents=True, exist_ok=True)
-        os.environ['YOLO_CONFIG_DIR'] = str(RAIZ_ESTUDIO / 'ultralytics')
+        CONFIG_ULTRALYTICS = Path('/content/tarea2_config/ultralytics') if EN_COLAB else RAIZ_ESTUDIO / 'ultralytics'
+        (CONFIG_ULTRALYTICS / 'Ultralytics').mkdir(parents=True, exist_ok=True)
+        os.environ['YOLO_CONFIG_DIR'] = str(CONFIG_ULTRALYTICS)
         os.environ['YOLO_AUTOINSTALL'] = 'false'
+        print('Notebook:', VERSION_NOTEBOOK)
         print('Estudio:', RAIZ_ESTUDIO)
         print('Datos:', DATASET_DIR)
     '''), code('''
@@ -162,11 +174,17 @@ def build(part):
     '''), code('\n'.join(imports) + '\n\n' + '\n\n'.join(constants) + '''
 
 torch.set_num_threads(min(8, os.cpu_count() or 1))
-print('PyTorch:', torch.__version__, '| CUDA:', torch.cuda.is_available())
-if not torch.cuda.is_available():
-    print('CPU: permite inspección y pruebas breves. El entrenamiento principal requiere GPU.')
-if EJECUTAR_ENTRENAMIENTO and (not torch.cuda.is_available() or torch.version.cuda is None):
-    raise RuntimeError('Selecciona un runtime GPU en Colab y reinicia la sesión. El entrenamiento requiere PyTorch con CUDA.')
+if DISPOSITIVO_EJECUCION not in {'auto', 'cpu', 'cuda'}:
+    raise ValueError('DISPOSITIVO_EJECUCION debe ser auto, cpu o cuda')
+if DISPOSITIVO_EJECUCION == 'auto':
+    DISPOSITIVO_EJECUCION = 'cuda' if torch.cuda.is_available() and torch.version.cuda is not None else 'cpu'
+if DISPOSITIVO_EJECUCION == 'cuda' and (not torch.cuda.is_available() or torch.version.cuda is None):
+    raise RuntimeError('Se solicitó CUDA pero PyTorch no la ofrece. Usa DISPOSITIVO_EJECUCION="cpu" o instala PyTorch CUDA.')
+print('PyTorch:', torch.__version__, '| dispositivo:', DISPOSITIVO_EJECUCION, '| CUDA:', torch.cuda.is_available(), '| compilación CUDA:', torch.version.cuda)
+if DISPOSITIVO_EJECUCION == 'cpu':
+    print('Modo CPU activado. AMP desactivado; el entrenamiento puede tardar bastante más que en GPU.')
+    if EN_COLAB:
+        print('Colab: para usar GPU, selecciona un acelerador en Entorno de ejecución > Cambiar tipo de entorno de ejecución. Si sigue apareciendo +cpu, restablece el entorno administrado de Colab.')
 ''')]
     block(cells, 'Funciones de archivos y geometría', GEOMETRY)
     block(cells, 'Descarga verificada del dataset', DOWNLOAD)
@@ -270,12 +288,12 @@ if EJECUTAR_ENTRENAMIENTO and (not torch.cuda.is_available() or torch.version.cu
                      minimo_epocas=c['minimo_epocas'], paciencia=c['paciencia'])
                 for n, c in configuraciones.items()])))
             if EJECUTAR_ENTRENAMIENTO or EJECUTAR_DIAGNOSTICO or EJECUTAR_EVALUACION:
-                exigir_gpu()
+                exigir_dispositivo(DISPOSITIVO_EJECUCION)
                 if PARTE == 2:
                     descargar_pesos(PESOS_DIR)
             if EJECUTAR_DIAGNOSTICO:
                 for nombre, config in configuraciones.items():
-                    diagnostico = diagnostico_real(config, auditoria, manifiesto, estadisticas)
+                    diagnostico = diagnostico_real(config, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION)
                     guardar_json(RAIZ_ESTUDIO / 'modelos' / nombre / 'diagnostico_train.json', diagnostico)
                     print(nombre, diagnostico)
             if EJECUTAR_ENTRENAMIENTO:
@@ -298,7 +316,7 @@ if EJECUTAR_ENTRENAMIENTO and (not torch.cuda.is_available() or torch.version.cu
         cells.append(code('''
             if EJECUTAR_EVALUACION:
                 for nombre in MODELOS_DE_ESTA_PARTE:
-                    evaluar_validacion(nombre, auditoria, manifiesto, estadisticas)
+                    evaluar_validacion(nombre, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION)
                 comparacion_validacion = comparar_disponibles(MODELOS_DE_ESTA_PARTE, 'val')
             else:
                 print('Evaluación pendiente; se necesitan entrenamientos completos.')
@@ -314,11 +332,11 @@ if EJECUTAR_ENTRENAMIENTO and (not torch.cuda.is_available() or torch.version.cu
                 if EJECUTAR_EVALUACION:
                     # Reevaluar también las bases con el mismo dispositivo/software y batch 1.
                     for nombre in ('cnn_ssd', 'yolo_scratch'):
-                        evaluar_validacion(nombre, auditoria, manifiesto, estadisticas)
+                        evaluar_validacion(nombre, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION)
                     cierre = cerrar_seleccion(auditoria, manifiesto, estadisticas)
                     print('Ganador fijado con validación:', cierre['ganador_validacion'])
                     for nombre in KINDS:
-                        evaluar_test(nombre, cierre, auditoria, manifiesto, estadisticas)
+                        evaluar_test(nombre, cierre, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION)
                     comparacion_test = comparar_disponibles(KINDS, 'test')
             '''))
     else:
@@ -343,17 +361,17 @@ if EJECUTAR_ENTRENAMIENTO and (not torch.cuda.is_available() or torch.version.cu
         '''))
         cells.append(code('''
             if EJECUTAR_ROBUSTEZ:
-                exigir_gpu()
+                exigir_dispositivo(DISPOSITIVO_EJECUCION)
                 descargar_pesos(PESOS_DIR)
                 cierre = leer_json(RAIZ_ESTUDIO / 'evaluacion/seleccion_cerrada.json')
-                resultados_robustez = ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas)
+                resultados_robustez = ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION)
                 graficar_robustez_final(cierre['ganador_validacion'])
                 # Si test favorece otro modelo, se añade como análisis secundario, sin alterar la selección.
                 pruebas = {n: leer_json(RAIZ_ESTUDIO / 'evaluacion' / n / 'test.json') for n in KINDS}
                 ganador_test = max(KINDS, key=lambda n: pruebas[n]['metricas']['map_50_95'])
                 if ganador_test != cierre['ganador_validacion']:
                     print('Análisis secundario del líder de test:', ganador_test)
-                    ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, nombre=ganador_test)
+                    ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION, nombre=ganador_test)
                     graficar_robustez_final(ganador_test)
             else:
                 print('Robustez pendiente: activa EJECUTAR_ROBUSTEZ después de completar Parte 2.')
@@ -392,6 +410,7 @@ if EJECUTAR_ENTRENAMIENTO and (not torch.cuda.is_available() or torch.version.cu
         'language_info': {'name': 'python'}, 'colab': {'provenance': [], 'toc_visible': True}}, cells=cells)
     for i, cell in enumerate(cells):
         cell['id'] = f'parte{part}-{i:03d}'
+    add_completion_messages(notebook)
     filenames = {1: 'Tarea_2_Parte_1.ipynb', 2: 'Tarea_2_Parte_2.ipynb',
                  3: 'Tarea_2_Parte_3.ipynb'}
     path = ROOT / filenames[part]

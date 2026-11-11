@@ -6,6 +6,7 @@ Ejecutar: .venv/Scripts/python.exe tools/tarea2/verify_notebooks.py
 import ast
 import copy
 import hashlib
+import io
 import importlib.util
 import json
 import os
@@ -16,15 +17,18 @@ import symtable
 import builtins
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 FILES = [ROOT / n for n in ('Tarea_2_Parte_1.ipynb',
-         'Tarea_2_Parte_2.ipynb', 'Tarea_2_Parte_3.ipynb')]
+         'Tarea_2_Parte_2.ipynb', 'Tarea_2_Parte_3.ipynb', 'Tarea_2.ipynb')]
 
 
 def load_definitions(path, output):
     ns = dict(__name__='notebook_test', RAIZ_ESTUDIO=output, PESOS_DIR=ROOT / 'resultados_etapas_1_2/pesos',
-              SEED=42, TAMANO=512, DATA_DIR=ROOT / 'data', DATASET_DIR=ROOT / 'data/extracted')
+              SEED=42, TAMANO=512, DISPOSITIVO_EJECUCION='cpu',
+              DATA_DIR=ROOT / 'data', DATASET_DIR=ROOT / 'data/extracted')
     notebook = json.loads(Path(path).read_text(encoding='utf-8'))
     constants = {'IMAGE_EXTENSIONS', 'KINDS', 'WEIGHTS', 'WEIGHT_SHA256',
                  'PARTICIONES_ORIGINALES', 'VERSION_MOTOR'}
@@ -114,6 +118,62 @@ class NotebookTests(unittest.TestCase):
             visit(table)
             self.assertEqual(missing, set(), path.name)
 
+    def test_unified_sequence_and_unchanged_scientific_definitions(self):
+        nb = json.loads(FILES[3].read_text(encoding='utf-8'))
+        nodes = [n for c in nb['cells'] if c['cell_type'] == 'code'
+                 for n in ast.parse(''.join(c['source'])).body]
+        defs = [n for n in nodes if isinstance(n, (ast.FunctionDef, ast.ClassDef))]
+        names = [n.name for n in defs]
+        self.assertEqual(len(names), len(set(names)))
+        unified = {n.name: ast.dump(n, include_attributes=False) for n in defs}
+        for path in FILES[:3]:
+            part = json.loads(path.read_text(encoding='utf-8'))
+            for c in part['cells']:
+                if c['cell_type'] == 'code':
+                    for n in ast.parse(''.join(c['source'])).body:
+                        if isinstance(n, (ast.FunctionDef, ast.ClassDef)):
+                            self.assertEqual(unified[n.name], ast.dump(n, include_attributes=False))
+        for flag in ('EJECUTAR_ENTRENAMIENTO', 'EJECUTAR_EVALUACION', 'EJECUTAR_ROBUSTEZ'):
+            assignment = next(n for n in nodes if isinstance(n, ast.Assign)
+                              and isinstance(n.targets[0], ast.Name) and n.targets[0].id == flag)
+            self.assertIs(ast.literal_eval(assignment.value), True)
+
+        # Solo simular la orquestación; no ejecutar entrenamientos ni simular CUDA.
+        events = []
+        winner = 'yolo_coco'
+        closed = {'ganador_validacion': winner}
+        ns = dict(self.namespaces[3])
+        ns.update(EJECUTAR_ENTRENAMIENTO=True, EJECUTAR_DIAGNOSTICO=False,
+                  EJECUTAR_EVALUACION=True, EJECUTAR_ROBUSTEZ=True,
+                  auditoria={}, manifiesto={}, estadisticas={},
+                  display=lambda *a: None, exigir_dispositivo=lambda *a: events.append(('guardia',)),
+                  descargar_pesos=lambda *a: events.append(('pesos',)),
+                  entrenar_modelo=lambda c, *a: events.append(('train', c['modelo'])),
+                  graficar_historial=lambda *a: None,
+                  evaluar_validacion=lambda n, *a, **kw: events.append(('val', n)),
+                  comparar_disponibles=lambda nombres, split: events.append(('comparar', split)),
+                  cerrar_seleccion=lambda *a: events.append(('cierre',)) or closed,
+                  evaluar_test=lambda n, *a, **kw: events.append(('test', n)),
+                  ejecutar_robustez=lambda *a, **kw: events.append(('robustez',)),
+                  graficar_robustez_final=lambda *a: None,
+                  leer_json=lambda p: closed if p.name == 'seleccion_cerrada.json' else
+                      {'metricas': {'map_50_95': 1. if p.parent.name == winner else 0.}})
+        runner = next(n for n in defs if n.name == 'ejecutar_grupo')
+        exec(compile(ast.Module(body=[runner], type_ignores=[]), 'orquestacion_unificada_sin_entrenamiento', 'exec'), ns)
+        for c in nb['cells']:
+            source = ''.join(c['source'])
+            if c['cell_type'] == 'code' and (
+                    source.startswith('comparacion_parte_') or 'cierre = cerrar_seleccion(' in source
+                    or source.startswith('if EJECUTAR_ROBUSTEZ:')):
+                exec(compile(source, 'orquestacion_unificada_sin_entrenamiento', 'exec'), ns)
+        trained = [e[1] for e in events if e[0] == 'train']
+        self.assertEqual(trained, list(ns['KINDS']))
+        close_index = events.index(('cierre',))
+        self.assertTrue(all(i < close_index for i, e in enumerate(events) if e[0] == 'train'))
+        self.assertTrue(all(i > close_index for i, e in enumerate(events) if e[0] == 'test'))
+        self.assertEqual(len([e for e in events if e[0] == 'test']), 4)
+        self.assertGreater(events.index(('robustez',)), max(i for i, e in enumerate(events) if e[0] == 'test'))
+
     def test_modified_partition_and_statistics_rejected(self):
         manifest = copy.deepcopy(self.manifest)
         manifest['partitions']['train'][0] = manifest['partitions']['val'][0]
@@ -138,12 +198,50 @@ class NotebookTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.ns['validar_configuracion'](c)
 
-    def test_gpu_guard_reports_cpu_as_cpu(self):
+    def test_device_guard_accepts_cpu_and_checks_cuda(self):
+        self.assertEqual(self.ns['exigir_dispositivo']('cpu'), 'cpu')
         if self.ns['torch'].cuda.is_available():
-            self.assertEqual(self.ns['exigir_gpu'](), 'cuda')
+            self.assertEqual(self.ns['exigir_dispositivo']('cuda'), 'cuda')
         else:
             with self.assertRaisesRegex(RuntimeError, 'CUDA'):
-                self.ns['exigir_gpu']()
+                self.ns['exigir_dispositivo']('cuda')
+
+    def test_colab_and_local_environment_startup(self):
+        from ultralytics.utils import get_user_config_dir
+
+        notebook = json.loads(FILES[3].read_text(encoding='utf-8'))
+        sources = [''.join(c['source']) for c in notebook['cells'] if c['cell_type'] == 'code']
+        setup = next(s for s in sources if 'CONFIG_ULTRALYTICS =' in s)
+        setup = setup[setup.index('CONFIG_ULTRALYTICS ='):]
+        preflight = next(s for s in sources if 'torch.set_num_threads(min(8' in s)
+        preflight = preflight[preflight.index('torch.set_num_threads(min(8'):]
+        torch = self.ns['torch']
+        for colab in (False, True):
+            with self.subTest(colab=colab), mock.patch.dict(os.environ):
+                folder = self.folder / ('colab' if colab else 'local')
+                # Emular /content en un directorio temporal de esta plataforma.
+                def mapped_path(value):
+                    return folder / 'content' if str(value).startswith('/content/') else Path(value)
+                ns = dict(EN_COLAB=colab, RAIZ_ESTUDIO=folder / 'estudio', Path=mapped_path,
+                          DATASET_DIR=folder / 'data', os=os, VERSION_NOTEBOOK='fixture')
+                with redirect_stdout(io.StringIO()):
+                    exec(compile(setup, 'configuracion_ultralytics_visible', 'exec'), ns)
+                expected = ns['CONFIG_ULTRALYTICS'] / 'Ultralytics'
+                self.assertTrue(expected.is_dir())
+                self.assertEqual(get_user_config_dir(), expected)
+                for requested, cuda, expected_device in (
+                        ('auto', False, 'cpu'), ('cpu', True, 'cpu'), ('auto', True, 'cuda')):
+                    with self.subTest(requested=requested, cuda=cuda), \
+                            mock.patch.object(torch.cuda, 'is_available', return_value=cuda), \
+                            mock.patch.object(torch.version, 'cuda', '12.6' if cuda else None), \
+                            mock.patch.object(torch, 'set_num_threads'), redirect_stdout(io.StringIO()):
+                        ns.update(torch=torch, DISPOSITIVO_EJECUCION=requested)
+                        exec(compile(preflight, 'seleccion_dispositivo_visible', 'exec'), ns)
+                        self.assertEqual(ns['DISPOSITIVO_EJECUCION'], expected_device)
+                with mock.patch.object(torch.cuda, 'is_available', return_value=False), \
+                        mock.patch.object(torch, 'set_num_threads'), self.assertRaisesRegex(RuntimeError, 'CUDA'):
+                    ns['DISPOSITIVO_EJECUCION'] = 'cuda'
+                    exec(compile(preflight, 'cuda_explicita_no_disponible', 'exec'), ns)
 
     def test_real_data_geometry_and_no_eval_augmentation(self):
         ns = self.ns

@@ -1,4 +1,20 @@
-# Tarea 2 — tres notebooks para Colab con GPU
+# Tarea 2 — notebooks para ejecución local o Colab
+
+**Versión unificada:** [Tarea_2.ipynb](Tarea_2.ipynb) reúne las tres partes corregidas.
+En local o Colab, usar **Ejecutar todo** para entrenar o retomar los cuatro modelos,
+compararlos y evaluar robustez. Comparte carpeta, etiqueta, protocolo y checkpoints compatibles
+con las versiones separadas; no necesita abrirlas ni importarlas.
+**Versión Kaggle:** [Tarea_2_Kaggle.ipynb](Tarea_2_Kaggle.ipynb) detecta Kaggle,
+lee el dataset adjunto desde `/kaggle/input` y escribe el estudio en `/kaggle/working`.
+Adjunta el dataset extraído conservando la carpeta `FjordFish/`; activa GPU e Internet en
+las opciones de sesión. Para reanudar tras una sesión nueva, adjunta el output anterior y
+define `RUTA_ESTUDIO_PREVIO_KAGGLE` en la configuración.
+El unificado anterior se conserva en `Material/Tarea_2_antes_unificar_1aadf1d6485a.ipynb`.
+No ejecutar el unificado y una parte simultáneamente sobre el mismo modelo/estudio.
+
+Cada celda de código termina con una confirmación como `[OK] Celda de código 03/37 finalizada sin errores.`
+Si la celda falla o se interrumpe, no alcanza esa confirmación y Jupyter/Colab muestra el error original.
+Los mensajes están incluidos en los notebooks y sus generadores; no requieren instalar módulos adicionales.
 
 La versión reorganizada se ejecuta en este orden:
 
@@ -7,35 +23,47 @@ La versión reorganizada se ejecuta en este orden:
 3. [Parte 3: robustez](Tarea_2_Parte_3.ipynb): evaluar el ganador con iluminación, desenfoque y ruido.
 
 Cada archivo incluye su código y abre en un kernel nuevo. **No necesita importar módulos del repositorio ni leer `Tarea_2.ipynb`.**
-Los tres usan la misma `RUTA_PROYECTO` y `ETIQUETA_ESTUDIO`; comparten datos y resultados en Drive.
+Los tres usan la misma `RUTA_PROYECTO` y `ETIQUETA_ESTUDIO`; comparten datos y resultados en la carpeta del proyecto.
 
-En Colab, seleccionar un runtime **GPU**. Por defecto se monta Drive en `MyDrive/Tarea2_DL`,
+Por defecto `DISPOSITIVO_EJECUCION="auto"` selecciona CUDA si está disponible; si no, usa CPU.
+La ruta CPU permite ejecutar localmente con PyTorch `+cpu`; AMP queda desactivado y el entrenamiento
+puede tardar mucho más. Se puede fijar `"cpu"` o `"cuda"` en la celda de configuración.
+El arranque actualizado imprime `Notebook: 2026-11-09-colab-cpu-v3`.
+Si una copia abierta en Colab sigue diciendo que el entrenamiento requiere CUDA, vuelve a subir el
+archivo actualizado desde **Archivo > Subir notebook**, reinicia la sesión y ejecuta desde el principio.
+Reiniciar la sesión por sí solo conserva el código de la copia anterior.
+La configuración de Ultralytics se crea antes de importarlo; en Colab utiliza
+`/content/tarea2_config/ultralytics/Ultralytics`, mientras los checkpoints siguen guardándose en Drive.
+En Colab se monta Drive en `MyDrive/Tarea2_DL`,
 las imágenes se extraen en `/content/fjordfish_datos` y el nuevo estudio se guarda en
-`resultados_tres_partes/colab_gpu_tres_partes_v1_s42/`. Los estudios antiguos permanecen intactos.
+`resultados_tres_partes/tres_partes_auto_v2_s42/`. Los estudios antiguos permanecen intactos.
 
-**Entrenamiento y evaluación activados en Partes 1 y 2.** Abrir Parte 1 en Colab con GPU y usar
+**Entrenamiento y evaluación activados en Partes 1 y 2.** Abrir Parte 1 localmente o en Colab y usar
 **Ejecutar todo**; al terminar, hacer lo mismo con Parte 2. La Parte 1 prepara primero el contrato de datos.
 `EJECUTAR_ENTRENAMIENTO=True` inicia o retoma los modelos de cada parte.
 Antes de cada corrida nueva, el código exige superar el diagnóstico de ocho imágenes de train
-y calibra batch/AMP en GPU. La evaluación posterior ya está habilitada con `EJECUTAR_EVALUACION=True`.
+y calibra el batch y habilita AMP solo con CUDA. En CPU usa batch físico 1 y acumulación de ocho
+microbatches para mantener el batch efectivo. La evaluación posterior ya está habilitada con `EJECUTAR_EVALUACION=True`.
 En Parte 3 activar `EJECUTAR_ROBUSTEZ=True`. No hay límite horario; se termina por épocas o paciencia.
 No ejecutar simultáneamente dos sesiones sobre el mismo modelo y estudio.
 
 El nuevo protocolo utiliza 60 épocas máximas desde cero y 30 COCO (cinco congeladas),
 batch efectivo 8, warmup, coseno, clipping y aumentos moderados. No se garantiza una mejora
 antes de ejecutar los experimentos. Test se reserva hasta cerrar modelos y umbrales con validación.
-Una instalación de PyTorch solo CPU impide iniciar los entrenamientos principales.
 
 Ver [diagnóstico y revisión de la rúbrica](docs/Diagnostico_Tarea_2.md).
 La verificación reproducible está en `tools/tarea2/verify_notebooks.py`; el generador de desarrollo
 `tools/tarea2/build_notebooks.py` permite reconstruir los tres archivos. Esos scripts **no se suben a Colab**
 ni son dependencias de ejecución de los notebooks.
+`tools/tarea2/build_unified.py` reúne las partes actuales y comprueba que sus funciones compartidas coincidan.
 
-## Instrucciones conservadas del notebook original
+## Instrucciones conservadas del notebook histórico
+
+Este bloque describe el respaldo anterior a la unificación, no el flujo actual de arriba.
 
 # Tarea 2 — flujo completo desde el notebook, CPU o CUDA
 
-Archivo: **Tarea_2.ipynb**, 95 celdas. Para iniciar:
+Archivo histórico: **Material/Tarea_2_antes_unificar_1aadf1d6485a.ipynb**, 95 celdas. Para iniciar:
 
 1. Reiniciar el kernel/runtime.
 2. Dejar en la primera celda `ACCION_LOCAL="completo"`, `MODO_EJECUCION="auto"`,

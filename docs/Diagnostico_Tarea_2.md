@@ -5,6 +5,12 @@ los resultados persistentes del repositorio, el enunciado y la rúbrica. Se excl
 del uso de IA, como solicitó el usuario. No se asigna una nota: hay componentes implementados
 cuya ejecución y discusión todavía deben completarse.
 
+**Actualización de unificación:** el archivo actual `Tarea_2.ipynb` reúne las tres partes corregidas
+en 76 celdas, con entrenamiento, evaluación y robustez activados. `DISPOSITIVO_EJECUCION="auto"`
+usa CUDA cuando está disponible y permite CPU local con AMP desactivado. La descripción del notebook antiguo
+que sigue corresponde a su respaldo `Material/Tarea_2_antes_unificar_1aadf1d6485a.ipynb`.
+Las partes independientes se conservan y el unificado usa el mismo estudio y versión del motor.
+
 ## 1. Qué resultados son realmente evaluables
 
 El notebook adjunto tiene 98 celdas y unas 12.600 líneas. La ejecución guardada es de Colab,
@@ -94,7 +100,7 @@ y no se crean en esta intervención.
 
 ## 4. Qué cambió y cómo ejecutar
 
-Los originales permanecen intactos. Los tres notebooks nuevos son autocontenidos y conservan las cuatro
+El notebook antiguo se conserva íntegro en el respaldo indicado. Los tres notebooks separados son autocontenidos y conservan las cuatro
 arquitecturas, el catálogo, la política de depuración y los IDs originales. El código activo está en celdas
 visibles; no está oculto en metadatos ni necesita leer `Tarea_2.ipynb`.
 
@@ -135,20 +141,27 @@ Fundamentan mecanismos de implementación; no proporcionan garantías de AP para
 ## 5. Verificación y límites
 
 `tools/tarea2/verify_notebooks.py` carga las definiciones de los tres notebooks generados y comprueba
-esquema/compilación, contrato de IDs, geometría, AP COCO, clases sin soporte, separación val/test,
+esquema/compilación de las versiones separadas y unificada, contrato de IDs, geometría, AP COCO, clases sin soporte, separación val/test,
 acumulación, calentamiento y coseno, pesos oficiales, gradientes, actualización/congelamiento real de capas,
 degradaciones deterministas e integridad de checkpoints. Una prueba verifica la reanudación exacta de
 una CNN y su optimizador/planificador en un proceso Python nuevo con una fixture sintética explícita.
 
 Los reportes de verificación se guardan junto a este diagnóstico. Este equipo tiene PyTorch solo CPU:
-no se certifican CUDA, AMP ni el entrenamiento completo en Colab. El notebook comprobará esas capacidades
-con operaciones y gradientes reales antes de entrenar; ante una instalación CPU detendrá la corrida principal.
+no se certifican CUDA, AMP ni el entrenamiento completo en Colab. El modo CPU usa batch físico 1 con
+acumulación de ocho microbatches; se espera que tarde bastante más que en GPU. La opción CUDA sigue
+validando sus operaciones antes de entrenar.
 Las pruebas breves y diagnósticos de ocho imágenes no sustituyen los cuatro experimentos finales.
 
-**Resultado de la verificación:** 16 pruebas aprobadas, cero errores y cero fallos sobre los archivos finales.
+**Resultado de la verificación:** 18 pruebas locales aprobadas, cero errores y cero fallos sobre las tres partes y el unificado.
+La prueba de arranque ejecuta el código visible de configuración con rutas temporales y comprueba
+CPU, selección automática y carpeta de Ultralytics. La rama CUDA se simula para comprobar la selección;
+no sustituye una ejecución con GPU real en Colab. La versión de entorno es `2026-11-09-colab-cpu-v3`.
+La comprobación adicional verifica que las funciones científicas se conserven sin duplicados y que la
+orquestación ordene entrenamiento, cierre de validación, test y robustez; esa comprobación de orden no ejecuta corridas reales.
 Se reprodujo la preparación completa: 2930 imágenes, 6236 objetos, los IDs originales y exactamente las mismas
-medias/desviaciones de train. No se alteraron los originales del repositorio ni el notebook adjunto;
-se contrastaron sus hashes SHA-256.
+medias/desviaciones de train. Durante esa verificación se conservaron los originales y se contrastaron sus hashes SHA-256.
+En la unificación posterior se respaldó íntegramente el antiguo `Tarea_2.ipynb` antes de sustituirlo;
+el notebook adjunto del Escritorio y las tres partes independientes se conservan.
 
 Además se ejecutó el control de aprendizaje sobre ocho imágenes reales de train, en CPU, sin aumentos:
 
