@@ -1,5 +1,17 @@
 # Tarea 2 — notebooks para ejecución local o Colab
 
+Para preparar el entorno local en Linux con PyTorch para CPU, ejecutar desde esta carpeta:
+
+```bash
+bash tools/tarea2/preparar_entorno.sh
+```
+
+El script crea o completa `.venv`, instala las dependencias de `requirements.txt`,
+comprueba las importaciones y NMS, y registra el kernel **DeepLearning - Tarea 2 (.venv, CPU)**.
+Requiere acceso a PyPI y al servidor de paquetes de PyTorch. Seleccionar ese kernel al abrir
+el notebook en VS Code o Jupyter. Para activar el entorno en una terminal, usar
+`source .venv/bin/activate`.
+
 **Versión unificada:** [Tarea_2.ipynb](Tarea_2.ipynb) reúne las tres partes corregidas.
 En local o Colab, usar **Ejecutar todo** para entrenar o retomar los cuatro modelos,
 compararlos y evaluar robustez. Comparte carpeta, etiqueta, protocolo y checkpoints compatibles
