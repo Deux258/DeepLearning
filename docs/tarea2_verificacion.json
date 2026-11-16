@@ -1,14 +1,14 @@
 {
   "alcance": "Pruebas breves CPU y fixtures; no cuatro entrenamientos principales ni certificación CUDA",
-  "tests": 18,
+  "tests": 19,
   "errores": 0,
   "fallos": 0,
   "omitidas": 0,
   "cuda_disponible": false,
   "notebooks": {
-    "Tarea_2_Parte_1.ipynb": "8ede1924b4cee750d54565474edf31875fd5c573ab82a05cc7b42f2d1e349172",
-    "Tarea_2_Parte_2.ipynb": "e71e4ae33f115969c659750e91579e1a9d7c15109a7f55587bc730a1709b1ed7",
-    "Tarea_2_Parte_3.ipynb": "2a0fafdd7fefdec433607c71af3ccb7bcd4bfbc20fee1e0f876af60f5504e3a8",
-    "Tarea_2.ipynb": "35ef298ac7e7330f749f5cf167ad2736d9d45ffa64284d385b26653b4677233b"
+    "Tarea_2_Parte_1.ipynb": "bd46d0fe613c6a5d4feca3f7499450618d4a2d3b2610797840a3f8ce604a2e22",
+    "Tarea_2_Parte_2.ipynb": "287b7b87de9fce6b0831911b782bfe7ac35b2d0c160474aabc4f99c923785dd1",
+    "Tarea_2_Parte_3.ipynb": "78996884e482d2c740555995cf75fd2ff7df5431a75cb828df372ba752474cd5",
+    "Tarea_2.ipynb": "9490606f740ad88f8f4a66179eda620d380cc6a1d278177cc3c537a790643ed3"
   }
 }

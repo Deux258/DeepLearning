@@ -44,7 +44,11 @@ las imágenes se extraen en `/content/fjordfish_datos` y el nuevo estudio se gua
 Antes de cada corrida nueva, el código exige superar el diagnóstico de ocho imágenes de train
 y calibra el batch y habilita AMP solo con CUDA. En CPU usa batch físico 1 y acumulación de ocho
 microbatches para mantener el batch efectivo. La evaluación posterior ya está habilitada con `EJECUTAR_EVALUACION=True`.
-En Parte 3 activar `EJECUTAR_ROBUSTEZ=True`. No hay límite horario; se termina por épocas o paciencia.
+En [Parte 3](Tarea_2_Parte_3.ipynb), usa **Ejecutar todo** con al menos un `mejor.pt` y su `mejor.sha256`
+en la carpeta del modelo. El notebook prepara los datos si faltan y reutiliza la selección cerrada si existe.
+Con una corrida parcial, elige entre los checkpoints disponibles por mAP50–95 de validación,
+calibra el umbral con validación y guarda los resultados en `robustez_provisional/`.
+El entrenamiento termina al alcanzar el máximo de épocas o agotar la paciencia.
 No ejecutar simultáneamente dos sesiones sobre el mismo modelo y estudio.
 
 El nuevo protocolo utiliza 60 épocas máximas desde cero y 30 COCO (cinco congeladas),

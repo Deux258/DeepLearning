@@ -129,7 +129,7 @@ class NotebookTests(unittest.TestCase):
         for path in FILES[:3]:
             part = json.loads(path.read_text(encoding='utf-8'))
             for c in part['cells']:
-                if c['cell_type'] == 'code':
+                if c['cell_type'] == 'code' and not c['metadata'].get('tarea2_solo_parte3'):
                     for n in ast.parse(''.join(c['source'])).body:
                         if isinstance(n, (ast.FunctionDef, ast.ClassDef)):
                             self.assertEqual(unified[n.name], ast.dump(n, include_attributes=False))
@@ -173,6 +173,49 @@ class NotebookTests(unittest.TestCase):
         self.assertTrue(all(i > close_index for i, e in enumerate(events) if e[0] == 'test'))
         self.assertEqual(len([e for e in events if e[0] == 'test']), 4)
         self.assertGreater(events.index(('robustez',)), max(i for i, e in enumerate(events) if e[0] == 'test'))
+
+    def test_standalone_robustness_uses_validation_or_saved_selection(self):
+        notebook = json.loads(FILES[2].read_text(encoding='utf-8'))
+        action = next(''.join(c['source']) for c in notebook['cells']
+                      if c['cell_type'] == 'code' and 'alcance = ' in ''.join(c['source']))
+        ns = self.namespaces[2]
+        audit, manifest = self.audit, self.manifest
+        root = ns['RAIZ_ESTUDIO']
+        selection = root / 'evaluacion/seleccion_cerrada.json'
+        names = ('cnn_ssd', 'yolo_coco')
+        events = []
+
+        def infer(model, audit, ids):
+            self.assertEqual(ids, manifest['partitions']['val'])
+            events.append(('val', model))
+            return model, 0.
+
+        def robustness(cierre, audit, manifest, detector, ficha, dispositivo, nombre):
+            events.append(('robustez', nombre))
+            self.assertEqual(cierre['ganador_validacion'], nombre)
+            self.assertEqual(cierre['modelos'][nombre]['umbral'], .25)
+            return []
+
+        overrides = dict(
+            EJECUTAR_ROBUSTEZ=True, ruta_cierre=selection, candidatos=names,
+            preparar_datos=lambda: (audit, manifest, self.stats), display=lambda *args: None,
+            cargar_checkpoint_parte3=lambda nombre, *args: (nombre, dict(checkpoint=nombre, epoca=4)),
+            predecir_ids=infer, elegir_umbral=lambda gt, preds, split: dict(selected=dict(threshold=.25)),
+            evaluar=lambda gt, preds, umbral: dict(map_50_95=.2 if preds == 'yolo_coco' else .1),
+            ejecutar_robustez_parte3=robustness, graficar_robustez_parte3=lambda *args: None)
+        with mock.patch.dict(ns, overrides), redirect_stdout(io.StringIO()):
+            exec(action, ns)
+            provisional = ns['leer_json'](root / 'robustez_provisional/seleccion.json')
+            self.assertEqual(events, [('val', 'cnn_ssd'), ('val', 'yolo_coco'), ('robustez', 'yolo_coco')])
+            self.assertEqual(provisional['alcance'], 'provisional')
+            self.assertFalse(selection.exists())
+            final = dict(provisional)
+            del final['alcance']
+            ns['guardar_json'](selection, final)
+            events.clear()
+            exec(action, ns)
+            self.assertEqual(events, [('robustez', 'yolo_coco')])
+            self.assertEqual(ns['leer_json'](selection), final)
 
     def test_modified_partition_and_statistics_rejected(self):
         manifest = copy.deepcopy(self.manifest)

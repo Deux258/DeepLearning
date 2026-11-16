@@ -28,7 +28,7 @@ def cell(kind, source):
 
 def definitions(notebook):
     return {node.name: ast.dump(node, include_attributes=False)
-            for c in notebook['cells'] if c['cell_type'] == 'code'
+            for c in notebook['cells'] if c['cell_type'] == 'code' and not c['metadata'].get('tarea2_solo_parte3')
             for node in ast.parse(''.join(c['source'])).body
             if isinstance(node, (ast.FunctionDef, ast.ClassDef))}
 
@@ -79,10 +79,10 @@ def build():
             if name in replacements:
                 lines[node.lineno - 1:node.end_lineno] = [f'{name} = {replacements[name]}\n']
     cells[2] = cell('code', ''.join(lines))
-    robust_cell = next(c for c in third['cells'] if c['cell_type'] == 'code'
-                       and any(isinstance(n, ast.FunctionDef) and n.name == 'ejecutar_robustez'
-                               for n in ast.parse(''.join(c['source'])).body))
-    cells.extend([cell('markdown', '### Auxiliares comunes de robustez'), copy.deepcopy(robust_cell)])
+    reporting = Path(__file__).with_name('reporting.py').read_text(encoding='utf-8')
+    robust_helpers = next(section.split('\n', 1)[1] for section in reporting.split('# %% ')
+                          if section.startswith('Robustez pareada, sin recalibración\n'))
+    cells.extend([cell('markdown', '### Auxiliares comunes de robustez'), cell('code', robust_helpers)])
     cells.append(cell('markdown', ''.join(first['cells'][boundary]['source']).replace(
         '## 4. Entrenamiento y diagnóstico previo', '## 4. Protocolo común y diagnóstico previo')))
     cells.extend([
@@ -142,9 +142,23 @@ def build():
                        and ''.join(c['source']).startswith('## 4. Evaluación de robustez'))
     cells.append(cell('markdown', ''.join(robust_text['source']).replace('## 4. Evaluación de robustez',
         '## 7. Parte 3 — Evaluación de robustez')))
-    robust_action = next(c for c in third['cells'] if c['cell_type'] == 'code'
-                         and ''.join(c['source']).startswith('if EJECUTAR_ROBUSTEZ:'))
-    cells.append(copy.deepcopy(robust_action))
+    cells.append(cell('code', '''
+        if EJECUTAR_ROBUSTEZ:
+            exigir_dispositivo(DISPOSITIVO_EJECUCION)
+            descargar_pesos(PESOS_DIR)
+            cierre = leer_json(RAIZ_ESTUDIO / 'evaluacion/seleccion_cerrada.json')
+            resultados_robustez = ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION)
+            graficar_robustez_final(cierre['ganador_validacion'])
+            # Si test favorece otro modelo, se añade como análisis secundario, sin alterar la selección.
+            pruebas = {n: leer_json(RAIZ_ESTUDIO / 'evaluacion' / n / 'test.json') for n in KINDS}
+            ganador_test = max(KINDS, key=lambda n: pruebas[n]['metricas']['map_50_95'])
+            if ganador_test != cierre['ganador_validacion']:
+                print('Análisis secundario del líder de test:', ganador_test)
+                ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION, nombre=ganador_test)
+                graficar_robustez_final(ganador_test)
+        else:
+            print('Robustez desactivada en la configuración.')
+    '''))
     discussion = next(c for c in first['cells'] if c['cell_type'] == 'markdown'
                       and ''.join(c['source']).startswith('## 6. Resultados'))
     cells.append(cell('markdown', ''.join(discussion['source']).replace('## 6. Resultados', '## 8. Resultados')))

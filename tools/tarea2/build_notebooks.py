@@ -69,6 +69,7 @@ ROBUST = extracted('condiciones_robustez degradar_imagen nombre_condicion dibuja
 RUNTIME = (HERE / 'runtime.py').read_text(encoding='utf-8')
 REPORTING = (HERE / 'reporting.py').read_text(encoding='utf-8')
 PREPARATION = (HERE / 'data_preparation.py').read_text(encoding='utf-8')
+STANDALONE_ROBUSTNESS = (HERE / 'robustness_standalone.py').read_text(encoding='utf-8')
 VERSION = hashlib.sha256(('\n'.join([GEOMETRY, DOWNLOAD, CONTRACT, AUGMENT, METRICS, OPTIM, WEIGHTS,
     ROBUST, RUNTIME, REPORTING, PREPARATION] + [c for _, c in MODELS]
     + [extracted(names) for _, names in AUDIT_GROUPS])).encode()).hexdigest()
@@ -102,25 +103,68 @@ def select_definitions(source, names):
                         if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name in names)
 
 
+def robustez_parte3(source):
+    """Reutiliza la evaluación pareada con el checkpoint ya cargado y su carpeta de salida."""
+    reemplazos = [
+        ('ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, dispositivo=None, nombre=None)',
+         'ejecutar_robustez_parte3(cierre, auditoria, manifiesto, detector, ficha, dispositivo, nombre)'),
+        ('    dispositivo = dispositivo or DISPOSITIVO_EJECUCION\n', ''),
+        ("    nombre = nombre or cierre['ganador_validacion']\n", ''),
+        ('    detector, _, _ = cargar_mejor(nombre, auditoria, manifiesto, estadisticas, dispositivo)\n', ''),
+        ("calcular_sha256(RAIZ_ESTUDIO / 'modelos' / nombre / 'mejor.pt')", "ficha['checkpoint']"),
+        ("RAIZ_ESTUDIO / 'robustez' / nombre", "carpeta_robustez_parte3(cierre, nombre)"),
+        ('graficar_robustez_final(nombre)', 'graficar_robustez_parte3(cierre, nombre)'),
+        ('        etiqueta = nombre_condicion(condicion)\n',
+         '        etiqueta = nombre_condicion(condicion)\n'
+         "        print(f'Test de {nombre}, condición {etiqueta}: {len(ids)} imágenes.', flush=True)\n"),
+    ]
+    for antes, despues in reemplazos:
+        if antes not in source:
+            raise ValueError(f'Revisar la adaptación del protocolo para Parte 3: {antes!r}')
+        source = source.replace(antes, despues)
+    return source
+
+
 def build(part):
     title = {1: 'Modelos desde cero', 2: 'Transfer learning y comparación final', 3: 'Robustez del mejor detector'}[part]
     names = {1: ['cnn_ssd', 'yolo_scratch'], 2: ['yolo_coco', 'fasterrcnn_coco'], 3: []}[part]
-    cells = [md(f'''
-        # Tarea 2 · Parte {part}: {title}
+    introduccion = md('''
+        Usa **Ejecutar todo** en un kernel nuevo, local o Colab. El notebook prepara o
+        recupera el contrato de datos y reutiliza los checkpoints guardados. Configura `RUTA_PROYECTO`
+        con la carpeta que contiene `resultados_tres_partes/` si abriste el notebook desde otra ubicación.
 
-        **Integrantes:** Diego Muñoz, Benjamín Arguelles e Ignacio Pastén.
+        Conserva la carpeta del estudio original. Para cada detector que quieras evaluar se necesitan
+        `modelos/<modelo>/mejor.pt` y `mejor.sha256`. Si aún falta el cierre de las Partes 1 y 2,
+        se compara en validación el mejor checkpoint de cada modelo disponible y se evalúa en test
+        el de mayor mAP50–95, con umbral fijado en validación. El resultado queda en `robustez_provisional/`.
+        Si existe una selección cerrada, se reutiliza y se guarda en `robustez/`.
+        Esta parte ejecuta inferencia, sin entrenar ni retomar épocas.
 
+        El adjunto registró para YOLO11n COCO un mAP50–95 de validación de **0,09572 en la época 26**.
+        Para probar ese detector en otro equipo, copia su checkpoint y el hash desde el estudio que
+        produjo ese resultado. La selección de este notebook usa los archivos que encuentre al ejecutarse.
+        La inferencia usa CUDA cuando está disponible y CPU en caso contrario.
+    ''' if part == 3 else '''
         Este notebook contiene su código y no necesita módulos Python del repositorio ni el notebook original.
         Los tres archivos comparten un contrato de datos y resultados en Drive. Ejecuta primero la preparación
         de la Parte 1; después cada parte funciona desde un kernel nuevo.
 
         **Uso local o en Colab:** `DISPOSITIVO_EJECUCION="auto"` elige CUDA si está disponible y CPU en caso contrario. En CPU el entrenamiento es más lento y AMP se desactiva.
-        {'El entrenamiento y la evaluación están activados; se retoman los checkpoints compatibles.' if part in (1, 2) else 'Activa EJECUTAR_ROBUSTEZ cuando hayas completado las Partes 1 y 2.'}
+        El entrenamiento y la evaluación están activados; se retoman los checkpoints compatibles.
         Los estados pendientes se muestran como pendientes, nunca como resultados cero.
 
         **Recorrido:** configuración → datos → arquitecturas → entrenamiento → evaluación → discusión.
         Los auxiliares se agrupan por responsabilidad. Las métricas usan escala 0–1.
-    '''), md('## 1. Configuración y entorno'), code(f'''
+    ''')
+    portada = md(f'''
+        # Tarea 2 · Parte {part}: {title}
+
+        **Integrantes:** Diego Muñoz, Benjamín Arguelles e Ignacio Pastén.
+    ''')
+    portada['source'] = (''.join(portada['source']) + '\n\n' +
+                         ''.join(introduccion['source'])).splitlines(keepends=True)
+
+    cells = [portada, md('## 1. Configuración y entorno'), code(f'''
         from pathlib import Path
         import sys, os, importlib.util, importlib.metadata, subprocess
 
@@ -133,7 +177,7 @@ def build(part):
         EJECUTAR_ENTRENAMIENTO = {part in (1, 2)}
         EJECUTAR_DIAGNOSTICO = False  # Diagnóstico de 300 pasos sobre ocho imágenes de train.
         EJECUTAR_EVALUACION = {part in (1, 2)}
-        EJECUTAR_ROBUSTEZ = False
+        EJECUTAR_ROBUSTEZ = {part == 3}
         INSTALAR_FALTANTES = True
         MODELOS_DE_ESTA_PARTE = {names!r}
         SEED, TAMANO = 42, 512
@@ -204,12 +248,17 @@ if DISPOSITIVO_EJECUCION == 'cpu':
     block(cells, 'Identidad de datos y validación de particiones', CONTRACT)
     for title_, source in sections(RUNTIME)[:1]:
         block(cells, title_, source)
-    if part == 1:
+    if part in (1, 3):
         for label, identifiers in AUDIT_GROUPS:
             block(cells, label, extracted(identifiers))
-        block(cells, 'Estadísticas y cobertura de anclas, solo train', extracted('calcular_normalizacion revisar_anclas'))
+        if part == 1:
+            block(cells, 'Estadísticas y cobertura de anclas, solo train',
+                  extracted('calcular_normalizacion revisar_anclas'))
+        else:
+            block(cells, 'Normalización, solo train', extracted('calcular_normalizacion'))
         for label, source in sections(PREPARATION):
             block(cells, label, source)
+    if part == 1:
         cells.append(code('''
             auditoria, manifiesto, estadisticas = preparar_datos()
             print(json.dumps(auditoria['summary'], ensure_ascii=False, indent=2))
@@ -220,11 +269,21 @@ if DISPOSITIVO_EJECUCION == 'cpu':
             display(Image.open(RAIZ_ESTUDIO / 'datos/curacion/annotations.jpg'))
             display(Image.open(RAIZ_ESTUDIO / 'datos/curacion/class_distribution.png'))
         '''))
-    else:
+    elif part == 2:
         cells.append(code('''
             DATASET_DIR = asegurar_dataset()
             auditoria, manifiesto, estadisticas = cargar_contrato(DATASET_DIR)
             print('Contrato verificado:', {s: len(ids) for s, ids in manifiesto['partitions'].items()})
+        '''))
+    else:
+        cells.append(code('''
+            candidatos = [nombre for nombre in KINDS
+                          if (RAIZ_ESTUDIO / 'modelos' / nombre / 'mejor.pt').is_file()]
+            ruta_cierre = RAIZ_ESTUDIO / 'evaluacion/seleccion_cerrada.json'
+            if EJECUTAR_ROBUSTEZ and not candidatos:
+                raise FileNotFoundError(
+                    f'Faltan los checkpoints entrenados en {RAIZ_ESTUDIO / "modelos"}. '
+                    'Copia al menos un mejor.pt con su mejor.sha256 desde el estudio original.')
         '''))
     block(cells, 'Dataset y aumentos moderados, solo train', AUGMENT)
     cells.append(md('''
@@ -342,41 +401,39 @@ if DISPOSITIVO_EJECUCION == 'cpu':
     else:
         for label, source in sections(RUNTIME)[1:]:
             selected = select_definitions(source, {'configuracion_modelo', 'validar_configuracion',
-                'identidad_corrida', 'leer_estado', 'predecir_ids', 'cargar_mejor'})
+                'identidad_corrida', 'leer_estado', 'predecir_ids'})
             if selected:
                 block(cells, label, selected)
         for label, source in sections(REPORTING):
             if label == 'Figuras y comparación':
                 source = select_definitions(source, {'guardar_ejemplos'})
+            elif label == 'Robustez pareada, sin recalibración':
+                standalone_defs = STANDALONE_ROBUSTNESS.split('# Acción de Parte 3\n', 1)[0]
+                for standalone_label, standalone_source in sections(standalone_defs):
+                    block(cells, standalone_label, standalone_source)
+                    cells[-1]['metadata']['tarea2_solo_parte3'] = True
+                source = robustez_parte3(source)
             block(cells, label, source)
+            if label == 'Robustez pareada, sin recalibración':
+                cells[-1]['metadata']['tarea2_solo_parte3'] = True
         cells.append(md('''
             ## 4. Evaluación de robustez
 
-            El ganador se fija por mAP50–95 de **validación**, antes de consultar test.
+            El detector se selecciona por mAP50–95 de **validación**, antes de consultar test.
             Sobre sus mismas 454 imágenes de test se evalúan siete condiciones: limpio, iluminación ×0,7/×0,4,
             desenfoque gaussiano radio 1/2 píxeles y ruido gaussiano σ=0,02/0,05 sobre intensidades 0–1.
             El ruido usa una semilla determinista por imagen/condición. No cambian cajas, pesos ni umbral.
             Se informa caída absoluta y relativa respecto al limpio; si AP limpia es cero, la caída relativa es N/D.
             No se exige monotonía: la clasificación de peores condiciones debe salir de las mediciones.
         '''))
-        cells.append(code('''
-            if EJECUTAR_ROBUSTEZ:
-                exigir_dispositivo(DISPOSITIVO_EJECUCION)
-                descargar_pesos(PESOS_DIR)
-                cierre = leer_json(RAIZ_ESTUDIO / 'evaluacion/seleccion_cerrada.json')
-                resultados_robustez = ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION)
-                graficar_robustez_final(cierre['ganador_validacion'])
-                # Si test favorece otro modelo, se añade como análisis secundario, sin alterar la selección.
-                pruebas = {n: leer_json(RAIZ_ESTUDIO / 'evaluacion' / n / 'test.json') for n in KINDS}
-                ganador_test = max(KINDS, key=lambda n: pruebas[n]['metricas']['map_50_95'])
-                if ganador_test != cierre['ganador_validacion']:
-                    print('Análisis secundario del líder de test:', ganador_test)
-                    ejecutar_robustez(cierre, auditoria, manifiesto, estadisticas, dispositivo=DISPOSITIVO_EJECUCION, nombre=ganador_test)
-                    graficar_robustez_final(ganador_test)
-            else:
-                print('Robustez pendiente: activa EJECUTAR_ROBUSTEZ después de completar Parte 2.')
-        '''))
+        cells.append(code(STANDALONE_ROBUSTNESS.split('# Acción de Parte 3\n', 1)[1]))
     cells.append(md('''
+        ## 5. Resultados y discusión
+
+        Revisa la caída de mAP50–95 respecto a limpio y los ejemplos pareados de las condiciones
+        con mayor caída. Usa el resumen CSV y la figura de la carpeta del modelo. Cuando la selección
+        es provisional, las métricas corresponden únicamente a los checkpoints disponibles en esa ejecución.
+    ''' if part == 3 else '''
         ## 6. Resultados, discusión y evidencia de la rúbrica
 
         **Estado de entrega de este notebook:** código preparado; no se han ejecutado aquí los cuatro
@@ -393,7 +450,10 @@ if DISPOSITIVO_EJECUCION == 'cpu':
         Los once criterios técnicos suman 60 puntos para este grupo de tres integrantes.
         Video de máximo 20 minutos y diapositivas son entregables adicionales que estos notebooks no generan.
     '''))
-    cells.append(code('evidencias_rubrica = actualizar_rubrica()'))
+    cells.append(code('''
+        if EJECUTAR_ROBUSTEZ and cierre.get('alcance') != 'provisional':
+            evidencias_rubrica = actualizar_rubrica()
+    ''' if part == 3 else 'evidencias_rubrica = actualizar_rubrica()'))
     cells.append(md('''
         **Referencias:** [FjordFish](https://zenodo.org/records/17950781),
         [SSD Torchvision](https://pytorch.org/blog/torchvision-ssd-implementation/),
