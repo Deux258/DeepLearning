@@ -1,0 +1,6 @@
+accelerate
+bitsandbytes
+ipykernel
+notebook
+peft
+transformers

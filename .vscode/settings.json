@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/tarea3/.runtime/rocm",
+  "python-envs.workspaceSearchPaths": [
+    "./**/.venv",
+    "./tarea3/.runtime/rocm"
+  ]
+}
