@@ -21,7 +21,9 @@ DATASET_REV = "09be8c5bbc57cb3887f3a9732ad6aa7ec602a1fa"
 SOURCES = ("helpful-base", "harmless-base")
 MAX_SFT_TOKENS = 256
 MAX_PPO_PROMPT_TOKENS = 128
-MAX_EVAL_TOKENS = 128
+MAX_EVAL_TOKENS = 256
+SFT_LR = 5e-5
+SFT_DIR = "sft_lr5e5"
 TURN = re.compile(r"\n\n(Human|Assistant):")
 
 
