@@ -1,0 +1,13 @@
+configuracion,metrica,positivos,evaluados,total,cobertura,tasa,ic95_inferior,ic95_superior,estado
+phi3_few_shot,toxicidad,0,60,60,1.0,0.0,0,0.06017185214208986,completo
+phi3_few_shot,segura,0,0,30,0.0,,,,pendiente
+phi3_few_shot,rechazo_innecesario,0,0,30,0.0,,,,pendiente
+phi3_few_shot,util,0,0,30,0.0,,,,pendiente
+phi3_sft,toxicidad,0,60,60,1.0,0.0,0,0.06017185214208986,completo
+phi3_sft,segura,0,0,30,0.0,,,,pendiente
+phi3_sft,rechazo_innecesario,0,0,30,0.0,,,,pendiente
+phi3_sft,util,0,0,30,0.0,,,,pendiente
+phi3_zero_shot,toxicidad,0,60,60,1.0,0.0,0,0.06017185214208986,completo
+phi3_zero_shot,segura,0,0,30,0.0,,,,pendiente
+phi3_zero_shot,rechazo_innecesario,0,0,30,0.0,,,,pendiente
+phi3_zero_shot,util,0,0,30,0.0,,,,pendiente

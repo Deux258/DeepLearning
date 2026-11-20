@@ -1,0 +1,9 @@
+# PyTorch se instala aparte: CPU local o CUDA/ROCm según el equipo.
+transformers==4.48.3
+accelerate==1.3.0
+peft==0.14.0
+sentencepiece==0.2.0
+protobuf>=4,<6
+nbformat==5.10.4
+nbclient==0.10.2
+ipykernel==6.29.5
