@@ -1,0 +1,19 @@
+{
+  "particiones": {
+    "sft": 512,
+    "recompensa_train": 1024,
+    "recompensa_val": 128,
+    "ppo": 128
+  },
+  "particiones_reproducibles": true,
+  "solapamientos_exactos": 0,
+  "sft_enmascaramiento": true,
+  "sft_padding_enmascarado": true,
+  "prueba": "Phi3Config de 1 capa con pesos aleatorios; no Phi-3-mini preentrenado",
+  "perdida_prueba": 10.4698486328125,
+  "lora_actualizada": true,
+  "adaptador_recargado": true,
+  "generacion_tecnica": true,
+  "gpu_disponible": false,
+  "entrenamiento_real_phi3": "NO EJECUTADO"
+}

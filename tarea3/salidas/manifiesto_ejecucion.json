@@ -1,0 +1,16 @@
+{
+  "fecha_local": "2026-11-19",
+  "rama": "Tarea3_entrenamiento",
+  "commit_original": "72a5b3e",
+  "modelo_toxicidad": "unitary/toxic-bert",
+  "revision_toxicidad": "4d6c22e74ba2fdd26bc4f7238f50766b045a0d94",
+  "respuestas_puntuadas": 180,
+  "fuente_respuestas": "Salida HTML preservada del notebook original",
+  "nuevas_respuestas_phi3_generadas": false,
+  "etiquetas_humanas_generadas": false,
+  "python_entorno": "3.12.3",
+  "plataforma": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+  "notebook_parte2_ejecutado": true,
+  "celdas_ejecutadas_sin_errores": 4,
+  "pruebas_integridad_aprobadas": 9
+}

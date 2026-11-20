@@ -27,8 +27,11 @@ SFT_DIR = "sft_lr5e5"
 TURN = re.compile(r"\n\n(Human|Assistant):")
 
 
-def preparar_notebook():
-    missing = [name for name in ("torch", "transformers", "accelerate", "peft", "bitsandbytes")
+def preparar_notebook(*, requiere_gpu=True):
+    packages = ("torch", "transformers", "accelerate", "peft")
+    if requiere_gpu:
+        packages += ("bitsandbytes",)
+    missing = [name for name in packages
                if find_spec(name) is None]
     if missing:
         raise RuntimeError(
@@ -176,5 +179,5 @@ def load_model():
     )
     return AutoModelForCausalLM.from_pretrained(
         MODEL_ID, revision=MODEL_REV, quantization_config=quantization,
-        dtype=torch.float16, device_map={"": 0}, attn_implementation="eager",
+        torch_dtype=torch.float16, device_map={"": 0}, attn_implementation="eager",
     )

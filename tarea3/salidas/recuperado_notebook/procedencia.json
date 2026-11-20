@@ -1,0 +1,12 @@
+{
+  "origen": "/home/ignacio/Descargas/DeepLearning-ramas/Tarea3_entrenamiento/tarea3/salidas/origen/evaluacion_original.ipynb",
+  "sha256_notebook": "fc0d7beab4b8586a4dc7f07ed048e38cacbe76bdf6e41bcff3d4a077009fb424",
+  "respuestas": 180,
+  "configuraciones": [
+    "phi3_few_shot",
+    "phi3_sft",
+    "phi3_zero_shot"
+  ],
+  "max_new_tokens": 256,
+  "advertencia": "Textos recuperados de HTML. No se ejecutó inferencia Phi-3 ni se verificaron los pesos SFT originales. Puntajes previos redondeados; se puntúan de nuevo. Límite 256 según código y salida del notebook de origen."
+}

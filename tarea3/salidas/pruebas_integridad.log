@@ -1,0 +1,14 @@
+test_casos_originales_sin_solapamiento (test_revision.RevisionTests.test_casos_originales_sin_solapamiento) ... ok
+test_etiquetas_no_aplicables_y_sin_justificacion (test_revision.RevisionTests.test_etiquetas_no_aplicables_y_sin_justificacion) ... ok
+test_metricas_cobertura_y_vacias_no_se_inventan (test_revision.RevisionTests.test_metricas_cobertura_y_vacias_no_se_inventan) ... ok
+test_parseo_turno_unico (test_revision.RevisionTests.test_parseo_turno_unico) ... ok
+test_preserva_anotaciones_y_no_sobrescribe_corrida (test_revision.RevisionTests.test_preserva_anotaciones_y_no_sobrescribe_corrida) ... ok
+test_rechaza_casos_duplicados_ausentes_y_tokens (test_revision.RevisionTests.test_rechaza_casos_duplicados_ausentes_y_tokens) ... ok
+test_rechaza_configuraciones_duplicadas (test_revision.RevisionTests.test_rechaza_configuraciones_duplicadas) ... ok
+test_recuperacion_original_y_no_sobrescritura (test_revision.RevisionTests.test_recuperacion_original_y_no_sobrescritura) ... ok
+test_wilson_extremos_y_sin_datos (test_revision.RevisionTests.test_wilson_extremos_y_sin_datos) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.105s
+
+OK

@@ -2,6 +2,9 @@
 
 ## Tarea 3 - Diego Muñoz, Benjamín Argüelles, Ignacio Pastén
 
+- [Parte 2 del enunciado: evaluación y comprobaciones](tarea3/PARTE2.md)
+- [Notebook de la parte 2, ejecutable en CPU](tarea3/parte2_evaluacion.ipynb)
+
 - [Particiones y SFT de Phi-3](tarea3/entrenamiento.ipynb)
 - [Evaluación zero-shot, few-shot y SFT](tarea3/evaluacion.ipynb)
 - [Prompts comunes y demostraciones few-shot](tarea3/prompts.json)
