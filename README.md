@@ -3,7 +3,8 @@
 ## Tarea 3 - Diego Muñoz, Benjamín Argüelles, Ignacio Pastén
 
 - [Particiones y SFT de Phi-3](tarea3/entrenamiento.ipynb)
-- [Evaluación zero-shot, few-shot y SFT](tarea3/evaluacion.ipynb)
+- [Recompensa y PPO de Phi-3](tarea3/rlhf.ipynb)
+- [Evaluación zero-shot, few-shot, SFT y PPO](tarea3/evaluacion.ipynb)
 - [Prompts comunes y demostraciones few-shot](tarea3/prompts.json)
 
 ### Entorno
@@ -21,15 +22,18 @@ uvx --from uv@latest uv pip install --python tarea3/.runtime/rocm/Scripts/python
 tarea3/.runtime/rocm/Scripts/python.exe -m ipykernel install --user --name tarea3-gpu --display-name 'Tarea 3 (GPU)'
 ```
 
-**Otra GPU local.** Crea un entorno con el [PyTorch para tu sistema y GPU](https://pytorch.org/get-started/locally/). Desde ese entorno instala `python -m pip install -U -r tarea3/requirements.txt` y registra `python -m ipykernel install --user --name tarea3-gpu --display-name "Tarea 3 (GPU)"`. Selecciona ese kernel en ambos cuadernos.
+**Otra GPU local.** Crea un entorno con el [PyTorch para tu sistema y GPU](https://pytorch.org/get-started/locally/). Desde ese entorno instala `python -m pip install -U -r tarea3/requirements.txt` y registra `python -m ipykernel install --user --name tarea3-gpu --display-name "Tarea 3 (GPU)"`. Selecciona ese kernel en los cuadernos.
 
-**Colab.** Activa una GPU y copia los dos `.ipynb`, `comun.py`, `revision.py` y `prompts.json` a una misma carpeta. Desde una celda temporal, instala `%pip install -U accelerate bitsandbytes peft transformers`, reinicia la sesión y ubícate en esa carpeta con `%cd /content/tarea3` (ajusta la ruta según dónde copiaste los archivos). Guarda `salidas/` en almacenamiento persistente.
+**Colab.** Activa una GPU y copia los tres `.ipynb`, `comun.py`, `rlhf.py`, `revision.py` y `prompts.json` a una misma carpeta. Desde una celda temporal, instala `%pip install -U accelerate bitsandbytes matplotlib peft transformers`, reinicia la sesión y ubícate en esa carpeta con `%cd /content/tarea3` (ajusta la ruta según dónde copiaste los archivos). Guarda `salidas/` en almacenamiento persistente.
 
 ### Ejecución
 
 1. Ejecutar `entrenamiento.ipynb` para reproducir las particiones y entrenar Phi-3 con `5e-5`. El adaptador se guarda en `salidas/sft_lr5e5/`. El adaptador con `2e-4` sigue en `salidas/sft/` y sus resultados de 128 tokens están en `salidas/respuestas/final/`.
 2. Para comparar los dos adaptadores completos, fijar `PILOTO = True` en `evaluacion.ipynb`. Usa los ocho prompts piloto con ambos adaptadores cuando están disponibles, además de los baselines. `PILOTO = True` en entrenamiento hace una sola actualización de prueba y deja ese adaptador en `salidas/sft_lr5e5_piloto/`.
-3. Para la comparación final, ejecutar `evaluacion.ipynb` con `PILOTO = False`. Usa 256 tokens como máximo y lotes de cuatro prompts en las tres configuraciones. Escribe los CSV en `salidas/respuestas_256/final/`. Si una celda se interrumpe, volver a ejecutarla con la misma configuración para continuar desde el último lote guardado. Apagar el kernel de entrenamiento antes de cargar otro modelo en la RX 6600.
+3. Ejecutar `rlhf.ipynb` con `PILOTO = True` para verificar la ruta reducida y con `PILOTO = False` para la corrida final. Entrena y valida DistilBERT, luego ajusta con PPO el adaptador `sft_lr5e5`. En modo final guarda el modelo de recompensa en `salidas/recompensa_distilbert/` y el adaptador en `salidas/ppo_lr3e6/`. Los artefactos de piloto llevan el sufijo `_piloto`. El reporte de cada salida registra los datos, parámetros y métricas de la corrida. Ante una interrupción de PPO, volver a ejecutar la celda para retomar desde el último checkpoint compatible.
+4. Para la comparación final, ejecutar `evaluacion.ipynb` con `PILOTO = False`. Usa 256 tokens como máximo y lotes de cuatro prompts en las cuatro configuraciones, una vez disponible PPO. Escribe los CSV en `salidas/respuestas_256/final/`. Si una celda se interrumpe, volver a ejecutarla con la misma configuración para continuar desde el último lote guardado. Apagar el kernel de entrenamiento antes de cargar otro modelo en la RX 6600.
+
+Para sumar PPO a una evaluación ya generada, ejecutar las tres primeras celdas de código, la celda que carga `sft_model` y la celda de PPO. Después actualizar **Toxicidad y revisión humana** y **Respuestas obtenidas**.
 
 ### Pauta de revisión humana
 
@@ -46,7 +50,7 @@ Toxic-BERT recibe solo la respuesta generada, usa la probabilidad de la etiqueta
 
 ### Intercambio de resultados
 
-- **Integrante 2.** Elegir el adaptador SFT después de comparar el piloto. Usar los JSONL `recompensa_train`, `recompensa_val` y `ppo` de `salidas/particiones/`. Cada fila identifica la fuente y la línea del corpus original. El split PPO trae solo el prompt.
-- **Integrante 3.** Usar los prompts y las cuatro demostraciones fijas de `prompts.json`, junto con el límite de 256 tokens. Unir los CSV de `salidas/respuestas_256/final/` por `prompt_id` y `configuracion`. Usar `preparar_revision` con la lista completa de configuraciones cuando se agreguen Mistral y PPO.
+- **Integrante 2.** Compartir `salidas/ppo_lr3e6/`, los reportes de recompensa y PPO y `phi3_ppo.csv`. Las particiones `recompensa_train`, `recompensa_val` y `ppo` identifican la fuente y la línea del corpus original.
+- **Integrante 3.** Usar los prompts y las cuatro demostraciones fijas de `prompts.json`, junto con el límite de 256 tokens. Unir los CSV de `salidas/respuestas_256/final/` por `prompt_id` y `configuracion`. Incluir Mistral en la lista de configuraciones al ejecutar `preparar_revision`.
 
 La revisión del modelo y la del dataset están fijadas en `tarea3/comun.py`. Guardar el resultado de `uv pip freeze` del entorno usado junto a las salidas concretas de la corrida para reproducirla.

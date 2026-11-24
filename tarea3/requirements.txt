@@ -1,6 +1,7 @@
 accelerate
 bitsandbytes
 ipykernel
+matplotlib
 notebook
 peft
 transformers
