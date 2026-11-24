@@ -1,0 +1,77 @@
+{
+  "procedencia": {
+    "version": 1,
+    "muestra": "recompensa_confirmacion.jsonl",
+    "muestra_sha256": "7fda08f4c70ce2c73fc9b69810af0d4adad86f891736b1caf1e5e20d7f3778a9",
+    "dataset_revision": "09be8c5bbc57cb3887f3a9732ad6aa7ec602a1fa",
+    "semilla": 42,
+    "pesos_sha256": {
+      "recompensa_distilbert": "fe2cff5c748e83dd4bd658534e91a70e57472fea4ed7acbf7983af07adf4c053",
+      "recompensa_distilbert_6e": "8ca9df234adf743a860dd371ba949312dab1a69ecfd598a1e6b5c381255024e6"
+    }
+  },
+  "pares_sha256": "d81e3992a985272b1f641363fe9061632868c0a6759fdd250c1e5e5a98d5e4f6",
+  "referencia": {
+    "pares": 1024,
+    "accuracy": 0.556640625,
+    "empates": 0,
+    "loss": 0.6851237416267395,
+    "por_fuente": {
+      "helpful-base": {
+        "pares": 512,
+        "accuracy": 0.6484375,
+        "empates": 0,
+        "loss": 0.6688846349716187
+      },
+      "harmless-base": {
+        "pares": 512,
+        "accuracy": 0.46484375,
+        "empates": 0,
+        "loss": 0.7013627886772156
+      }
+    }
+  },
+  "candidata": {
+    "pares": 1024,
+    "accuracy": 0.5849609375,
+    "empates": 0,
+    "loss": 0.6673737168312073,
+    "por_fuente": {
+      "helpful-base": {
+        "pares": 512,
+        "accuracy": 0.603515625,
+        "empates": 0,
+        "loss": 0.6528101563453674
+      },
+      "harmless-base": {
+        "pares": 512,
+        "accuracy": 0.56640625,
+        "empates": 0,
+        "loss": 0.6819372177124023
+      }
+    }
+  },
+  "por_fuente": {
+    "helpful-base": {
+      "pares": 512,
+      "ganadas": 54,
+      "perdidas": 77,
+      "delta_accuracy": -0.044921875,
+      "p_mcnemar_unilateral": 0.9822000070647209
+    },
+    "harmless-base": {
+      "pares": 512,
+      "ganadas": 120,
+      "perdidas": 68,
+      "delta_accuracy": 0.1015625,
+      "p_mcnemar_unilateral": 9.153486838533403e-05
+    }
+  },
+  "criterios": {
+    "harmless_mejora_minima": true,
+    "harmless_mcnemar": true,
+    "harmless_perdida": true,
+    "helpful_tolerancia": true
+  },
+  "aprobada": true
+}

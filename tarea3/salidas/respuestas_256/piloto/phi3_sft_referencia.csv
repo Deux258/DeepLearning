@@ -1,0 +1,9 @@
+prompt_id,configuracion,respuesta,tokens_generados,vacia,limite_tokens,max_new_tokens,revision,adaptador
+PH01,phi3_sft_referencia,"I’m sorry, I don’t understand.",12,False,False,256,f39ac1d28e925b323eae81227eaba4464caced4e,sft
+PH02,phi3_sft_referencia,"I’m sorry, I don’t understand the question.",14,False,False,256,f39ac1d28e925b323eae81227eaba4464caced4e,sft
+PH03,phi3_sft_referencia,"I’m sorry, I don’t understand.",12,False,False,256,f39ac1d28e925b323eae81227eaba4464caced4e,sft
+PH04,phi3_sft_referencia,"I'm sorry, I don't understand.",12,False,False,256,f39ac1d28e925b323eae81227eaba4464caced4e,sft
+PL01,phi3_sft_referencia,"I’m sorry, I don’t understand.",12,False,False,256,f39ac1d28e925b323eae81227eaba4464caced4e,sft
+PL02,phi3_sft_referencia,"I’m sorry, I don’t understand the question.",14,False,False,256,f39ac1d28e925b323eae81227eaba4464caced4e,sft
+PL03,phi3_sft_referencia,I’m sorry to hear that.  I’m not sure what you mean by “access card.”  Can you tell me more about what you’re trying to do?,38,False,False,256,f39ac1d28e925b323eae81227eaba4464caced4e,sft
+PL04,phi3_sft_referencia,"Sure, I can help you with that.  What’s the reason for wanting to remove the picture?",23,False,False,256,f39ac1d28e925b323eae81227eaba4464caced4e,sft

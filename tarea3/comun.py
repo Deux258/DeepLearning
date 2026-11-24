@@ -25,6 +25,7 @@ MAX_EVAL_TOKENS = 256
 SFT_LR = 5e-5
 SFT_DIR = "sft_lr5e5"
 TURN = re.compile(r"\n\n(Human|Assistant):")
+EXPANDED_QUOTAS = {"sft": 256, "recompensa_train": 2048, "recompensa_val": 256, "ppo": 256}
 
 
 def preparar_notebook():
@@ -38,7 +39,7 @@ def preparar_notebook():
             "Para preparar este equipo por primera vez, sigue la sección Entorno del README."
         )
     os.environ.setdefault("HF_HOME", str(ROOT / ".runtime" / "hf"))
-    print(f"Python del cuaderno: {sys.executable}")
+    print(f"Python {sys.version.split()[0]} · entorno {Path(sys.prefix).name}")
 
 
 def prompt_key(text):
@@ -100,7 +101,7 @@ def sft_example(tokenizer, prompt, chosen):
     }
 
 
-def prepare_partitions(tokenizer):
+def prepare_partitions(tokenizer, *, expanded=False):
     from huggingface_hub import hf_hub_download
 
     prompts = load_prompts()
@@ -108,19 +109,35 @@ def prepare_partitions(tokenizer):
     rng = random.Random(SEED)
     parts = {name: [] for name in ("sft", "recompensa_train", "recompensa_val", "ppo")}
 
-    # Reservar la validación primero evita que un prompt repetido entre en entrenamiento.
-    for part, split, quota in (
+    original = OUT / "particiones"
+    recipe = (
         ("recompensa_val", "test", 64), ("sft", "train", 256),
         ("recompensa_train", "train", 512), ("ppo", "train", 64),
-    ):
+    )
+    if expanded:
+        if not all((original / f"{name}.jsonl").is_file() for name in parts):
+            prepare_partitions(tokenizer)
+        for name in (*parts, "recompensa_confirmacion"):
+            path = original / f"{name}.jsonl"
+            if not path.is_file():
+                continue
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            seen.update(prompt_key(row["prompt"]) for row in rows)
+            if name in ("sft", "recompensa_train", "ppo"):
+                parts[name] = rows
+        # El test oficial queda reservado para la confirmación independiente.
+        recipe = tuple((name, "train", EXPANDED_QUOTAS[name])
+                       for name in ("recompensa_val", "recompensa_train", "ppo"))
+
+    for part, split, quota in recipe:
         for source in SOURCES:
+            selected = sum(row["source"] == source for row in parts[part])
             filename = hf_hub_download(
                 DATASET_ID, f"{source}/{split}.jsonl.gz", repo_type="dataset", revision=DATASET_REV,
             )
             with gzip.open(filename, "rt", encoding="utf-8") as stream:
                 lines = list(enumerate(stream, start=1))
             rng.shuffle(lines)
-            selected = 0
             for number, line in lines:
                 pair = json.loads(line)
                 chosen = single_turn(pair["chosen"])
@@ -150,7 +167,7 @@ def prepare_partitions(tokenizer):
             if selected != quota:
                 raise ValueError(f"{part}, {source}: se encontraron {selected} de {quota} filas válidas")
 
-    folder = OUT / "particiones"
+    folder = original / "ampliadas" if expanded else original
     folder.mkdir(parents=True, exist_ok=True)
     for name, rows in parts.items():
         rng.shuffle(rows)

@@ -1,0 +1,1200 @@
+{
+  "config": {
+    "version": 2,
+    "modelo_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
+    "particiones": {
+      "sft": "af51b035d5b7f9fa9768562812500309aeb0d48721409d309ddda2083db3709b",
+      "recompensa_train": "cd9d1ebfc2c9d24905e30e17baa6d4655cde987ebfc30b379d9be71b05cf8269",
+      "recompensa_val": "4ef637972a6d64b384f5db2337c7e3aa01758b7c54b018d4ebd51c0160752dad",
+      "ppo": "16f19d8c56453d173ebf206800fe5363cac78508c0e21de1cb99e3b953c04673"
+    },
+    "seed": 42,
+    "piloto": false,
+    "sft": "sft_lr5e5",
+    "sft_sha256": {
+      "adapter_model.safetensors": "293d842e5aa272e42fcaaad7569925bc05f1b44fe11131ec2917609226676d4e",
+      "adapter_config.json": "5bf8b97f2e107918db078e0d89a629667db50f4625770de85c39924735e117d1"
+    },
+    "recompensa": "recompensa_distilbert",
+    "recompensa_sha256": "fe2cff5c748e83dd4bd658534e91a70e57472fea4ed7acbf7983af07adf4c053",
+    "normalizacion": {
+      "media": 0.09924711287021637,
+      "desv": 0.11751028895378113,
+      "respuestas": 2048
+    },
+    "prompts": 128,
+    "max_prompt": 128,
+    "max_response": 64,
+    "gamma": 1.0,
+    "lambda": 0.95,
+    "precision": "NF4/FP16",
+    "lr_politica": 3e-06,
+    "lr_valor": 0.0001,
+    "clip": 0.2,
+    "beta_kl": 0.05,
+    "coef_valor": 0.5,
+    "max_grad_norm": 1.0,
+    "batch": 4,
+    "epochs": 2,
+    "checkpoint_cada": 8
+  },
+  "firma": "a5d7a11499efccbb4cc192c960a20e532b12235b41b096259bbf2b42aed82363",
+  "historial": [
+    {
+      "lote": 1,
+      "prompts": [
+        "helpful-base/train/15217",
+        "harmless-base/train/6127",
+        "harmless-base/train/35855",
+        "helpful-base/train/28953"
+      ],
+      "kl_por_token": 0.0,
+      "kl_inicial_max": 0.0,
+      "recompensa": 0.06449603755027056,
+      "recompensa_normalizada": -0.2957279369265616,
+      "longitud_media": 29.25,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 34.33,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -3.260425174289594e-08,
+          "loss_valor": 0.04355483129620552,
+          "fraccion_clip": 0.0,
+          "norma_grad": 3.6024014949798584,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.003791238646954298,
+          "loss_valor": 0.058375269174575806,
+          "fraccion_clip": 0.0,
+          "norma_grad": 8.11872673034668,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 2,
+      "prompts": [
+        "helpful-base/train/29271",
+        "helpful-base/train/20751",
+        "harmless-base/train/3375",
+        "harmless-base/train/33942"
+      ],
+      "kl_por_token": 7.991251186467707e-05,
+      "kl_inicial_max": null,
+      "recompensa": 0.07247163634747267,
+      "recompensa_normalizada": -0.2278564435602313,
+      "longitud_media": 32.75,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 34.62,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -1.4559913275036251e-08,
+          "loss_valor": 0.07324767857789993,
+          "fraccion_clip": 0.0,
+          "norma_grad": 2.8656668663024902,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0011308829998597503,
+          "loss_valor": 0.06901442259550095,
+          "fraccion_clip": 0.0,
+          "norma_grad": 1.9901145696640015,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 3,
+      "prompts": [
+        "helpful-base/train/38319",
+        "harmless-base/train/40803",
+        "helpful-base/train/38151",
+        "harmless-base/train/27094"
+      ],
+      "kl_por_token": -9.13131134439027e-06,
+      "kl_inicial_max": null,
+      "recompensa": 0.05058450344949961,
+      "recompensa_normalizada": -0.4141136053189064,
+      "longitud_media": 39.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 32.95,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -3.6215482168699964e-08,
+          "loss_valor": 0.04613490402698517,
+          "fraccion_clip": 0.0,
+          "norma_grad": 2.554354190826416,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0008224897901527584,
+          "loss_valor": 0.042649999260902405,
+          "fraccion_clip": 0.0,
+          "norma_grad": 1.2434028387069702,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 4,
+      "prompts": [
+        "helpful-base/train/2113",
+        "helpful-base/train/36898",
+        "harmless-base/train/6414",
+        "harmless-base/train/12851"
+      ],
+      "kl_por_token": -9.088603837881237e-05,
+      "kl_inicial_max": null,
+      "recompensa": 0.0686916634440422,
+      "recompensa_normalizada": -0.2600236089811009,
+      "longitud_media": 30.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 32.76,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 1.5634004313369587e-08,
+          "loss_valor": 0.07754407823085785,
+          "fraccion_clip": 0.0,
+          "norma_grad": 3.566368341445923,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0006214203895069659,
+          "loss_valor": 0.07503660023212433,
+          "fraccion_clip": 0.0,
+          "norma_grad": 3.204339027404785,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 5,
+      "prompts": [
+        "harmless-base/train/5017",
+        "helpful-base/train/23460",
+        "harmless-base/train/38266",
+        "helpful-base/train/16298"
+      ],
+      "kl_por_token": -0.000882113236002624,
+      "kl_inicial_max": null,
+      "recompensa": 0.09403358958661556,
+      "recompensa_normalizada": -0.044366525944390944,
+      "longitud_media": 26.0,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 33.29,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -1.733692833738587e-08,
+          "loss_valor": 0.07472880929708481,
+          "fraccion_clip": 0.0,
+          "norma_grad": 4.8980326652526855,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0010939729399979115,
+          "loss_valor": 0.06710793823003769,
+          "fraccion_clip": 0.0,
+          "norma_grad": 2.113264322280884,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 6,
+      "prompts": [
+        "harmless-base/train/16010",
+        "helpful-base/train/26056",
+        "helpful-base/train/10578",
+        "harmless-base/train/18123"
+      ],
+      "kl_por_token": -0.0009404084994457662,
+      "kl_inicial_max": null,
+      "recompensa": 0.017655893228948116,
+      "recompensa_normalizada": -0.6943325590268911,
+      "longitud_media": 16.75,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 29.29,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 8.540366991383053e-08,
+          "loss_valor": 0.1374688744544983,
+          "fraccion_clip": 0.0,
+          "norma_grad": 15.67213249206543,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.00012858945410698652,
+          "loss_valor": 0.15495091676712036,
+          "fraccion_clip": 0.0,
+          "norma_grad": 17.23126983642578,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 7,
+      "prompts": [
+        "harmless-base/train/17046",
+        "helpful-base/train/6999",
+        "helpful-base/train/18076",
+        "harmless-base/train/39223"
+      ],
+      "kl_por_token": 1.6802315485620056e-06,
+      "kl_inicial_max": null,
+      "recompensa": 0.06360356137156487,
+      "recompensa_normalizada": -0.30332281382331333,
+      "longitud_media": 44.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 35.44,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -2.678860511196035e-08,
+          "loss_valor": 0.015337938442826271,
+          "fraccion_clip": 0.0,
+          "norma_grad": 4.6526594161987305,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0001367718941764906,
+          "loss_valor": 0.010816387832164764,
+          "fraccion_clip": 0.0,
+          "norma_grad": 2.859208822250366,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 8,
+      "prompts": [
+        "harmless-base/train/4720",
+        "helpful-base/train/42882",
+        "harmless-base/train/16926",
+        "helpful-base/train/24570"
+      ],
+      "kl_por_token": -0.0015853786608204246,
+      "kl_inicial_max": null,
+      "recompensa": 0.07512150052934885,
+      "recompensa_normalizada": -0.20530638257860592,
+      "longitud_media": 19.0,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 31.44,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -2.509669272399151e-08,
+          "loss_valor": 0.01701907068490982,
+          "fraccion_clip": 0.0,
+          "norma_grad": 3.7819299697875977,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0003744552086573094,
+          "loss_valor": 0.012232411652803421,
+          "fraccion_clip": 0.0,
+          "norma_grad": 1.364422082901001,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 9,
+      "prompts": [
+        "harmless-base/train/10995",
+        "helpful-base/train/41621",
+        "harmless-base/train/40120",
+        "helpful-base/train/27782"
+      ],
+      "kl_por_token": 0.0003896534035447985,
+      "kl_inicial_max": null,
+      "recompensa": 0.03557979129254818,
+      "recompensa_normalizada": -0.5418021021351558,
+      "longitud_media": 25.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 34.59,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -3.7398994123805096e-08,
+          "loss_valor": 0.028570961207151413,
+          "fraccion_clip": 0.0,
+          "norma_grad": 4.187741279602051,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.00046262555406428874,
+          "loss_valor": 0.022741738706827164,
+          "fraccion_clip": 0.0,
+          "norma_grad": 1.4045418500900269,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 10,
+      "prompts": [
+        "helpful-base/train/34544",
+        "helpful-base/train/34218",
+        "harmless-base/train/7254",
+        "harmless-base/train/39413"
+      ],
+      "kl_por_token": 0.00039439459214918315,
+      "kl_inicial_max": null,
+      "recompensa": 0.12781498953700066,
+      "recompensa_normalizada": 0.2431095772219617,
+      "longitud_media": 46.75,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 37.72,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 0.0,
+          "loss_valor": 0.0830516517162323,
+          "fraccion_clip": 0.0,
+          "norma_grad": 9.776138305664062,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0001336368004558608,
+          "loss_valor": 0.09536652266979218,
+          "fraccion_clip": 0.0,
+          "norma_grad": 11.11130142211914,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 11,
+      "prompts": [
+        "harmless-base/train/12165",
+        "helpful-base/train/16221",
+        "harmless-base/train/38421",
+        "helpful-base/train/8563"
+      ],
+      "kl_por_token": 0.00025700259720906615,
+      "kl_inicial_max": null,
+      "recompensa": 0.10910175833851099,
+      "recompensa_normalizada": 0.08386197971286265,
+      "longitud_media": 39.0,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 33.41,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 6.11329724620191e-08,
+          "loss_valor": 0.09544828534126282,
+          "fraccion_clip": 0.0,
+          "norma_grad": 11.307952880859375,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -3.415498940739781e-05,
+          "loss_valor": 0.08647707849740982,
+          "fraccion_clip": 0.0,
+          "norma_grad": 10.145090103149414,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 12,
+      "prompts": [
+        "harmless-base/train/22458",
+        "helpful-base/train/41774",
+        "harmless-base/train/39543",
+        "helpful-base/train/5319"
+      ],
+      "kl_por_token": 0.0004925043904222548,
+      "kl_inicial_max": null,
+      "recompensa": 0.14743291307240725,
+      "recompensa_normalizada": 0.41005600982857937,
+      "longitud_media": 46.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 36.59,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -5.127281355044033e-08,
+          "loss_valor": 0.220110684633255,
+          "fraccion_clip": 0.0,
+          "norma_grad": 11.931604385375977,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -3.3406802685931325e-05,
+          "loss_valor": 0.19542889297008514,
+          "fraccion_clip": 0.0,
+          "norma_grad": 8.794148445129395,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 13,
+      "prompts": [
+        "helpful-base/train/21016",
+        "harmless-base/train/22371",
+        "helpful-base/train/20421",
+        "harmless-base/train/21358"
+      ],
+      "kl_por_token": -5.091612911201082e-05,
+      "kl_inicial_max": null,
+      "recompensa": 0.029492540284991264,
+      "recompensa_normalizada": -0.5936039576301341,
+      "longitud_media": 29.75,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 34.84,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -4.8084423553973465e-08,
+          "loss_valor": 0.02135086990892887,
+          "fraccion_clip": 0.0,
+          "norma_grad": 4.6881232261657715,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.00037499438622035086,
+          "loss_valor": 0.03119620680809021,
+          "fraccion_clip": 0.0,
+          "norma_grad": 7.104837417602539,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 14,
+      "prompts": [
+        "harmless-base/train/41964",
+        "helpful-base/train/25651",
+        "helpful-base/train/6109",
+        "harmless-base/train/27125"
+      ],
+      "kl_por_token": -0.0004901248030364513,
+      "kl_inicial_max": null,
+      "recompensa": 0.13390590529888868,
+      "recompensa_normalizada": 0.29494261938462457,
+      "longitud_media": 44.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 35.63,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 0.0,
+          "loss_valor": 0.18539027869701385,
+          "fraccion_clip": 0.0,
+          "norma_grad": 7.902646064758301,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -7.510452996939421e-05,
+          "loss_valor": 0.1744493991136551,
+          "fraccion_clip": 0.0,
+          "norma_grad": 5.917731285095215,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 15,
+      "prompts": [
+        "helpful-base/train/20546",
+        "harmless-base/train/39028",
+        "harmless-base/train/641",
+        "helpful-base/train/40546"
+      ],
+      "kl_por_token": 0.001137864193879068,
+      "kl_inicial_max": null,
+      "recompensa": 0.033710092306137085,
+      "recompensa_normalizada": -0.5577130406840898,
+      "longitud_media": 32.75,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 35.64,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 3.457979502741182e-08,
+          "loss_valor": 0.044615231454372406,
+          "fraccion_clip": 0.0,
+          "norma_grad": 7.675735950469971,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0001414859580108896,
+          "loss_valor": 0.05259902775287628,
+          "fraccion_clip": 0.0,
+          "norma_grad": 8.930257797241211,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 16,
+      "prompts": [
+        "harmless-base/train/39770",
+        "helpful-base/train/25913",
+        "harmless-base/train/26726",
+        "helpful-base/train/31327"
+      ],
+      "kl_por_token": -0.00021638826001435518,
+      "kl_inicial_max": null,
+      "recompensa": 0.15334405284374952,
+      "recompensa_normalizada": 0.4603591775253862,
+      "longitud_media": 28.5,
+      "vacias": 1,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 35.97,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 3.346225696532201e-08,
+          "loss_valor": 0.2404058277606964,
+          "fraccion_clip": 0.0,
+          "norma_grad": 12.637655258178711,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.00012034700921503827,
+          "loss_valor": 0.227706640958786,
+          "fraccion_clip": 0.0,
+          "norma_grad": 11.333969116210938,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 17,
+      "prompts": [
+        "helpful-base/train/8145",
+        "harmless-base/train/9688",
+        "harmless-base/train/175",
+        "helpful-base/train/18825"
+      ],
+      "kl_por_token": 0.0006353977951221168,
+      "kl_inicial_max": null,
+      "recompensa": 0.11850329861044884,
+      "recompensa_normalizada": 0.16386808263067298,
+      "longitud_media": 39.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 38.81,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 1.8107741084349982e-08,
+          "loss_valor": 0.18455767631530762,
+          "fraccion_clip": 0.0,
+          "norma_grad": 2.7465856075286865,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.00016330767539329827,
+          "loss_valor": 0.18040907382965088,
+          "fraccion_clip": 0.0,
+          "norma_grad": 2.1287615299224854,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 18,
+      "prompts": [
+        "helpful-base/train/17473",
+        "harmless-base/train/30532",
+        "harmless-base/train/30919",
+        "helpful-base/train/7576"
+      ],
+      "kl_por_token": -0.0015795616200193763,
+      "kl_inicial_max": null,
+      "recompensa": 0.059084431268274784,
+      "recompensa_normalizada": -0.3417801280170307,
+      "longitud_media": 17.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 27.25,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 0.0,
+          "loss_valor": 0.11631342023611069,
+          "fraccion_clip": 0.0,
+          "norma_grad": 10.849342346191406,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.00020203590975143015,
+          "loss_valor": 0.12026970833539963,
+          "fraccion_clip": 0.0,
+          "norma_grad": 11.394182205200195,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 19,
+      "prompts": [
+        "helpful-base/train/858",
+        "harmless-base/train/20950",
+        "harmless-base/train/16093",
+        "helpful-base/train/38025"
+      ],
+      "kl_por_token": -9.348304593004286e-05,
+      "kl_inicial_max": null,
+      "recompensa": -0.01573097426444292,
+      "recompensa_normalizada": -0.9784512331501645,
+      "longitud_media": 23.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 31.82,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 3.550914939864924e-08,
+          "loss_valor": 0.26255613565444946,
+          "fraccion_clip": 0.0,
+          "norma_grad": 22.482112884521484,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -6.188737461343408e-05,
+          "loss_valor": 0.23596949875354767,
+          "fraccion_clip": 0.0,
+          "norma_grad": 21.090307235717773,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 20,
+      "prompts": [
+        "harmless-base/train/18814",
+        "helpful-base/train/40844",
+        "harmless-base/train/5440",
+        "helpful-base/train/15242"
+      ],
+      "kl_por_token": 0.0008939491817727685,
+      "kl_inicial_max": null,
+      "recompensa": 0.04069515597075224,
+      "recompensa_normalizada": -0.4982708954319196,
+      "longitud_media": 26.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 27.34,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 1.3495391470996765e-08,
+          "loss_valor": 0.06705337017774582,
+          "fraccion_clip": 0.0,
+          "norma_grad": 8.220307350158691,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.000510017853230238,
+          "loss_valor": 0.05112127214670181,
+          "fraccion_clip": 0.0,
+          "norma_grad": 4.750563144683838,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 21,
+      "prompts": [
+        "helpful-base/train/27188",
+        "harmless-base/train/36165",
+        "helpful-base/train/5516",
+        "harmless-base/train/1467"
+      ],
+      "kl_por_token": 0.00048447216977365315,
+      "kl_inicial_max": null,
+      "recompensa": 0.03979692328721285,
+      "recompensa_normalizada": -0.5059147595695754,
+      "longitud_media": 30.0,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 32.58,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -4.7683720083568915e-08,
+          "loss_valor": 0.06504325568675995,
+          "fraccion_clip": 0.0,
+          "norma_grad": 6.112824440002441,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0002986908075399697,
+          "loss_valor": 0.052472326904535294,
+          "fraccion_clip": 0.0,
+          "norma_grad": 1.503032922744751,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 22,
+      "prompts": [
+        "helpful-base/train/21958",
+        "helpful-base/train/34670",
+        "harmless-base/train/23432",
+        "harmless-base/train/14998"
+      ],
+      "kl_por_token": 0.0006560004549100995,
+      "kl_inicial_max": null,
+      "recompensa": 0.16307928785681725,
+      "recompensa_normalizada": 0.5432049870263462,
+      "longitud_media": 50.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 38.62,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -1.652406034224896e-08,
+          "loss_valor": 0.13420967757701874,
+          "fraccion_clip": 0.0,
+          "norma_grad": 11.033143997192383,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0001326126657659188,
+          "loss_valor": 0.1622423380613327,
+          "fraccion_clip": 0.0,
+          "norma_grad": 14.032397270202637,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 23,
+      "prompts": [
+        "helpful-base/train/16342",
+        "harmless-base/train/23248",
+        "harmless-base/train/34091",
+        "helpful-base/train/23967"
+      ],
+      "kl_por_token": -0.000261383771430701,
+      "kl_inicial_max": null,
+      "recompensa": 0.09327146131545305,
+      "recompensa_normalizada": -0.0508521560789766,
+      "longitud_media": 35.0,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 35.44,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 4.087175753397787e-08,
+          "loss_valor": 0.13939443230628967,
+          "fraccion_clip": 0.0,
+          "norma_grad": 8.808442115783691,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -6.775174551876262e-05,
+          "loss_valor": 0.1409883350133896,
+          "fraccion_clip": 0.0,
+          "norma_grad": 9.25156307220459,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 24,
+      "prompts": [
+        "harmless-base/train/9592",
+        "harmless-base/train/37333",
+        "helpful-base/train/43047",
+        "helpful-base/train/20398"
+      ],
+      "kl_por_token": -0.0016652705380693078,
+      "kl_inicial_max": null,
+      "recompensa": 0.13229889515787363,
+      "recompensa_normalizada": 0.28126713483495147,
+      "longitud_media": 40.75,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 34.35,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -2.3403050164461092e-08,
+          "loss_valor": 0.15643270313739777,
+          "fraccion_clip": 0.0,
+          "norma_grad": 8.276845932006836,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": 3.931712399207754e-06,
+          "loss_valor": 0.14622457325458527,
+          "fraccion_clip": 0.0,
+          "norma_grad": 6.793830394744873,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 25,
+      "prompts": [
+        "harmless-base/train/36356",
+        "helpful-base/train/22987",
+        "harmless-base/train/12221",
+        "helpful-base/train/11175"
+      ],
+      "kl_por_token": -0.009101947769522667,
+      "kl_inicial_max": null,
+      "recompensa": 0.010504620149731636,
+      "recompensa_normalizada": -0.7551891286335678,
+      "longitud_media": 16.0,
+      "vacias": 1,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 28.14,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 0.0,
+          "loss_valor": 0.03953699767589569,
+          "fraccion_clip": 0.0,
+          "norma_grad": 3.7480428218841553,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.002024322748184204,
+          "loss_valor": 0.041842613369226456,
+          "fraccion_clip": 0.0,
+          "norma_grad": 4.7524094581604,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 26,
+      "prompts": [
+        "helpful-base/train/1463",
+        "harmless-base/train/16512",
+        "harmless-base/train/26639",
+        "helpful-base/train/20401"
+      ],
+      "kl_por_token": 0.000654050090815872,
+      "kl_inicial_max": null,
+      "recompensa": 0.16093016881495714,
+      "recompensa_normalizada": 0.5249162136687606,
+      "longitud_media": 38.5,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 37.22,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -6.192690360506958e-09,
+          "loss_valor": 0.2529572546482086,
+          "fraccion_clip": 0.0,
+          "norma_grad": 16.495656967163086,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -4.738646748592146e-05,
+          "loss_valor": 0.23383967578411102,
+          "fraccion_clip": 0.0,
+          "norma_grad": 14.859820365905762,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 27,
+      "prompts": [
+        "harmless-base/train/20269",
+        "harmless-base/train/19076",
+        "helpful-base/train/1888",
+        "helpful-base/train/9753"
+      ],
+      "kl_por_token": 0.0010222853161394596,
+      "kl_inicial_max": null,
+      "recompensa": 0.12215698231011629,
+      "recompensa_normalizada": 0.1949605404247689,
+      "longitud_media": 59.75,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 33.37,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 0.0,
+          "loss_valor": 0.018733175471425056,
+          "fraccion_clip": 0.0,
+          "norma_grad": 3.9452567100524902,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0001698258420219645,
+          "loss_valor": 0.013266163878142834,
+          "fraccion_clip": 0.0,
+          "norma_grad": 1.068061351776123,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 28,
+      "prompts": [
+        "helpful-base/train/34294",
+        "harmless-base/train/12490",
+        "helpful-base/train/13496",
+        "harmless-base/train/30265"
+      ],
+      "kl_por_token": 2.1859184926142916e-05,
+      "kl_inicial_max": null,
+      "recompensa": 0.08329026494175196,
+      "recompensa_normalizada": -0.13579107047162928,
+      "longitud_media": 41.0,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 36.49,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 2.3260348314124712e-08,
+          "loss_valor": 0.026441264897584915,
+          "fraccion_clip": 0.0,
+          "norma_grad": 1.1348707675933838,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0009809237672016025,
+          "loss_valor": 0.030491184443235397,
+          "fraccion_clip": 0.0,
+          "norma_grad": 3.8175885677337646,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 29,
+      "prompts": [
+        "helpful-base/train/19040",
+        "helpful-base/train/36234",
+        "harmless-base/train/24302",
+        "harmless-base/train/36881"
+      ],
+      "kl_por_token": -0.0006482265889644623,
+      "kl_inicial_max": null,
+      "recompensa": 0.12057083658874035,
+      "recompensa_normalizada": 0.1814626098563248,
+      "longitud_media": 44.0,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 37.18,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 2.167441692790817e-08,
+          "loss_valor": 0.016978150233626366,
+          "fraccion_clip": 0.0,
+          "norma_grad": 1.1832937002182007,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.0006902434979565442,
+          "loss_valor": 0.017280321568250656,
+          "fraccion_clip": 0.0,
+          "norma_grad": 1.9363068342208862,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 30,
+      "prompts": [
+        "harmless-base/train/26794",
+        "helpful-base/train/3355",
+        "harmless-base/train/35272",
+        "helpful-base/train/25924"
+      ],
+      "kl_por_token": 0.000578323204535991,
+      "kl_inicial_max": null,
+      "recompensa": 0.11482697818428278,
+      "recompensa_normalizada": 0.13258298871339042,
+      "longitud_media": 36.0,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 33.91,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 3.311369312086754e-08,
+          "loss_valor": 0.10812924057245255,
+          "fraccion_clip": 0.0,
+          "norma_grad": 2.6301052570343018,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.00035517747164703906,
+          "loss_valor": 0.10500607639551163,
+          "fraccion_clip": 0.0,
+          "norma_grad": 2.1279537677764893,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 31,
+      "prompts": [
+        "harmless-base/train/6891",
+        "helpful-base/train/39961",
+        "helpful-base/train/474",
+        "harmless-base/train/37105"
+      ],
+      "kl_por_token": 0.001247707405127585,
+      "kl_inicial_max": null,
+      "recompensa": 0.05144982319325209,
+      "recompensa_normalizada": -0.406749826781243,
+      "longitud_media": 29.25,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 34.84,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -6.520850348579188e-08,
+          "loss_valor": 0.08812109380960464,
+          "fraccion_clip": 0.0,
+          "norma_grad": 11.660802841186523,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -6.0562397266039625e-05,
+          "loss_valor": 0.08705507963895798,
+          "fraccion_clip": 0.0,
+          "norma_grad": 11.559659957885742,
+          "error_ratio_inicial": null
+        }
+      ]
+    },
+    {
+      "lote": 32,
+      "prompts": [
+        "helpful-base/train/10041",
+        "harmless-base/train/26080",
+        "helpful-base/train/10390",
+        "harmless-base/train/34669"
+      ],
+      "kl_por_token": 0.00011825393448816612,
+      "kl_inicial_max": null,
+      "recompensa": 0.1220935950987041,
+      "recompensa_normalizada": 0.19442112203020495,
+      "longitud_media": 37.75,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 34.8,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": 1.2631447887656577e-08,
+          "loss_valor": 0.11668875813484192,
+          "fraccion_clip": 0.0,
+          "norma_grad": 4.985456466674805,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -3.481227031443268e-05,
+          "loss_valor": 0.11512027680873871,
+          "fraccion_clip": 0.0,
+          "norma_grad": 4.955566883087158,
+          "error_ratio_inicial": null
+        }
+      ]
+    }
+  ],
+  "referencia_intacta": true,
+  "politica_actualizada": true,
+  "valor_actualizado": true,
+  "pesos_sha256": "11140cba23c3d704e604650eb5f432d51cd0eda33af89d87d56475c8d09d8da9"
+}

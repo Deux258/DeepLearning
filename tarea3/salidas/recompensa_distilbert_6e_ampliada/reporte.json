@@ -1,0 +1,231 @@
+{
+  "config": {
+    "version": 2,
+    "modelo": "distilbert/distilbert-base-uncased",
+    "revision": "12040accade4e8a0f71eabdb258fecc2e7e948be",
+    "dataset": "09be8c5bbc57cb3887f3a9732ad6aa7ec602a1fa",
+    "piloto": false,
+    "seed": 42,
+    "particiones": {
+      "sft": "50ff33a02775a6bf6e2a719495d9f33c5d8be60441ccec3d5b1fa89ef6a70282",
+      "recompensa_train": "f269bd62fd69ecb98440dbcc2bc3def99119077bf045c89fe63089a8e73c7e78",
+      "recompensa_val": "27f00e27bab3467fc513f9888595c7f99779de56845f413e2897eedc22304cad",
+      "ppo": "894495af0392c069c264850e33f1451cb92894766a358e84ccfba6646d430197"
+    },
+    "lr": 1e-05,
+    "weight_decay": 0.01,
+    "epochs": 6,
+    "pares_por_lote": 8,
+    "acumulacion": 2,
+    "max_prompt": 128,
+    "max_total": 512,
+    "scheduler": "linear",
+    "warmup_fraction": 0.1,
+    "seleccion": "perdida_ponderada_por_fuente",
+    "pasos_planificados": 1536,
+    "pasos_warmup": 154
+  },
+  "historial": [
+    {
+      "epoca": 1,
+      "loss_train": 0.6895247893407941,
+      "pares": 512,
+      "accuracy": 0.564453125,
+      "empates": 0,
+      "loss": 0.6836968064308167,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 256,
+          "accuracy": 0.6640625,
+          "empates": 0,
+          "loss": 0.6478306651115417
+        },
+        "harmless-base": {
+          "pares": 256,
+          "accuracy": 0.46484375,
+          "empates": 0,
+          "loss": 0.719562828540802
+        }
+      },
+      "segundos": 86.47,
+      "loss_ponderada": 0.6956521073977152,
+      "lr_siguiente": 9.261939218523879e-06,
+      "pasos_optimizador": 256,
+      "pasos_omitidos": 0
+    },
+    {
+      "epoca": 2,
+      "loss_train": 0.6398277201806195,
+      "pares": 512,
+      "accuracy": 0.654296875,
+      "empates": 0,
+      "loss": 0.6233260631561279,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 256,
+          "accuracy": 0.65234375,
+          "empates": 0,
+          "loss": 0.6202374696731567
+        },
+        "harmless-base": {
+          "pares": 256,
+          "accuracy": 0.65625,
+          "empates": 0,
+          "loss": 0.6264147162437439
+        }
+      },
+      "segundos": 83.06,
+      "loss_ponderada": 0.6243556340535482,
+      "lr_siguiente": 7.409551374819103e-06,
+      "pasos_optimizador": 512,
+      "pasos_omitidos": 0
+    },
+    {
+      "epoca": 3,
+      "loss_train": 0.5454088817932643,
+      "pares": 512,
+      "accuracy": 0.654296875,
+      "empates": 0,
+      "loss": 0.6206303238868713,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 256,
+          "accuracy": 0.640625,
+          "empates": 0,
+          "loss": 0.6272292137145996
+        },
+        "harmless-base": {
+          "pares": 256,
+          "accuracy": 0.66796875,
+          "empates": 0,
+          "loss": 0.6140314936637878
+        }
+      },
+      "segundos": 82.34,
+      "loss_ponderada": 0.6184307336807251,
+      "lr_siguiente": 5.557163531114328e-06,
+      "pasos_optimizador": 768,
+      "pasos_omitidos": 0
+    },
+    {
+      "epoca": 4,
+      "loss_train": 0.42597097737598233,
+      "pares": 512,
+      "accuracy": 0.646484375,
+      "empates": 0,
+      "loss": 0.6608178615570068,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 256,
+          "accuracy": 0.62109375,
+          "empates": 0,
+          "loss": 0.7109459638595581
+        },
+        "harmless-base": {
+          "pares": 256,
+          "accuracy": 0.671875,
+          "empates": 0,
+          "loss": 0.6106897592544556
+        }
+      },
+      "segundos": 81.16,
+      "loss_ponderada": 0.6441084941228231,
+      "lr_siguiente": 3.7120115774240236e-06,
+      "pasos_optimizador": 1023,
+      "pasos_omitidos": 1
+    },
+    {
+      "epoca": 5,
+      "loss_train": 0.32566533553472254,
+      "pares": 512,
+      "accuracy": 0.66015625,
+      "empates": 0,
+      "loss": 0.7114205956459045,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 256,
+          "accuracy": 0.63671875,
+          "empates": 0,
+          "loss": 0.7608352303504944
+        },
+        "harmless-base": {
+          "pares": 256,
+          "accuracy": 0.68359375,
+          "empates": 0,
+          "loss": 0.662006139755249
+        }
+      },
+      "segundos": 82.87,
+      "loss_ponderada": 0.6949491699536642,
+      "lr_siguiente": 1.8596237337192476e-06,
+      "pasos_optimizador": 1279,
+      "pasos_omitidos": 1
+    },
+    {
+      "epoca": 6,
+      "loss_train": 0.26622237380070146,
+      "pares": 512,
+      "accuracy": 0.658203125,
+      "empates": 0,
+      "loss": 0.7439984083175659,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 256,
+          "accuracy": 0.640625,
+          "empates": 0,
+          "loss": 0.8049584031105042
+        },
+        "harmless-base": {
+          "pares": 256,
+          "accuracy": 0.67578125,
+          "empates": 0,
+          "loss": 0.6830384731292725
+        }
+      },
+      "segundos": 82.06,
+      "loss_ponderada": 0.723678449789683,
+      "lr_siguiente": 7.23589001447178e-09,
+      "pasos_optimizador": 1535,
+      "pasos_omitidos": 1
+    }
+  ],
+  "mejor_epoca": 3,
+  "validacion": {
+    "pares": 512,
+    "accuracy": 0.654296875,
+    "empates": 0,
+    "loss": 0.6206303238868713,
+    "por_fuente": {
+      "helpful-base": {
+        "pares": 256,
+        "accuracy": 0.640625,
+        "empates": 0,
+        "loss": 0.6272292137145996
+      },
+      "harmless-base": {
+        "pares": 256,
+        "accuracy": 0.66796875,
+        "empates": 0,
+        "loss": 0.6140314936637878
+      }
+    }
+  },
+  "recortes": {
+    "train": {
+      "pares_prompt_truncado": 3,
+      "preferidas_truncadas": 5,
+      "rechazadas_truncadas": 2
+    },
+    "val": {
+      "pares_prompt_truncado": 0,
+      "preferidas_truncadas": 0,
+      "rechazadas_truncadas": 0
+    }
+  },
+  "normalizacion": {
+    "media": -0.24420472979545593,
+    "desv": 1.2150484323501587,
+    "respuestas": 8192
+  },
+  "pesos_sha256": "41010e23556ebae1c78daf6c3fe7eb74e73f12ae17c5ca6219f8ab6b356de805"
+}

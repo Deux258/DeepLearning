@@ -1,0 +1,87 @@
+{
+  "config": {
+    "version": 1,
+    "modelo": "distilbert/distilbert-base-uncased",
+    "revision": "12040accade4e8a0f71eabdb258fecc2e7e948be",
+    "dataset": "09be8c5bbc57cb3887f3a9732ad6aa7ec602a1fa",
+    "piloto": true,
+    "seed": 42,
+    "particiones": {
+      "sft": "af51b035d5b7f9fa9768562812500309aeb0d48721409d309ddda2083db3709b",
+      "recompensa_train": "cd9d1ebfc2c9d24905e30e17baa6d4655cde987ebfc30b379d9be71b05cf8269",
+      "recompensa_val": "4ef637972a6d64b384f5db2337c7e3aa01758b7c54b018d4ebd51c0160752dad",
+      "ppo": "16f19d8c56453d173ebf206800fe5363cac78508c0e21de1cb99e3b953c04673"
+    },
+    "lr": 2e-05,
+    "weight_decay": 0.01,
+    "epochs": 1,
+    "pares_por_lote": 8,
+    "acumulacion": 2,
+    "max_prompt": 128,
+    "max_total": 512
+  },
+  "historial": [
+    {
+      "epoca": 1,
+      "loss_train": 0.6964272856712341,
+      "pares": 16,
+      "accuracy": 0.5625,
+      "empates": 0,
+      "loss": 0.692241907119751,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 8,
+          "accuracy": 0.5,
+          "empates": 0,
+          "loss": 0.6947148442268372
+        },
+        "harmless-base": {
+          "pares": 8,
+          "accuracy": 0.625,
+          "empates": 0,
+          "loss": 0.6897690892219543
+        }
+      },
+      "segundos": 3.04
+    }
+  ],
+  "mejor_epoca": 1,
+  "validacion": {
+    "pares": 16,
+    "accuracy": 0.5625,
+    "empates": 0,
+    "loss": 0.692241907119751,
+    "por_fuente": {
+      "helpful-base": {
+        "pares": 8,
+        "accuracy": 0.5,
+        "empates": 0,
+        "loss": 0.6947148442268372
+      },
+      "harmless-base": {
+        "pares": 8,
+        "accuracy": 0.625,
+        "empates": 0,
+        "loss": 0.6897690892219543
+      }
+    }
+  },
+  "recortes": {
+    "train": {
+      "pares_prompt_truncado": 0,
+      "preferidas_truncadas": 0,
+      "rechazadas_truncadas": 0
+    },
+    "val": {
+      "pares_prompt_truncado": 0,
+      "preferidas_truncadas": 0,
+      "rechazadas_truncadas": 0
+    }
+  },
+  "normalizacion": {
+    "media": -0.005567327607423067,
+    "desv": 0.027020422741770744,
+    "respuestas": 64
+  },
+  "pesos_sha256": "252c625fbb1b756cf19e14eb2d469e3eb47247c2b31c19a2c9dc5661d2c9443e"
+}

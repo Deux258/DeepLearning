@@ -1,0 +1,231 @@
+{
+  "config": {
+    "version": 2,
+    "modelo": "distilbert/distilbert-base-uncased",
+    "revision": "12040accade4e8a0f71eabdb258fecc2e7e948be",
+    "dataset": "09be8c5bbc57cb3887f3a9732ad6aa7ec602a1fa",
+    "piloto": false,
+    "seed": 42,
+    "particiones": {
+      "sft": "af51b035d5b7f9fa9768562812500309aeb0d48721409d309ddda2083db3709b",
+      "recompensa_train": "cd9d1ebfc2c9d24905e30e17baa6d4655cde987ebfc30b379d9be71b05cf8269",
+      "recompensa_val": "4ef637972a6d64b384f5db2337c7e3aa01758b7c54b018d4ebd51c0160752dad",
+      "ppo": "16f19d8c56453d173ebf206800fe5363cac78508c0e21de1cb99e3b953c04673"
+    },
+    "lr": 1e-05,
+    "weight_decay": 0.01,
+    "epochs": 6,
+    "pares_por_lote": 8,
+    "acumulacion": 2,
+    "max_prompt": 128,
+    "max_total": 512,
+    "scheduler": "linear",
+    "warmup_fraction": 0.1,
+    "seleccion": "perdida_ponderada_por_fuente",
+    "pasos_planificados": 384,
+    "pasos_warmup": 39
+  },
+  "historial": [
+    {
+      "epoca": 1,
+      "loss_train": 0.6946590971201658,
+      "pares": 128,
+      "accuracy": 0.578125,
+      "empates": 0,
+      "loss": 0.6903701424598694,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 64,
+          "accuracy": 0.703125,
+          "empates": 0,
+          "loss": 0.682645320892334
+        },
+        "harmless-base": {
+          "pares": 64,
+          "accuracy": 0.453125,
+          "empates": 0,
+          "loss": 0.6980950832366943
+        }
+      },
+      "segundos": 23.85,
+      "loss_ponderada": 0.6929451624552408,
+      "lr_siguiente": 9.275362318840581e-06,
+      "pasos_optimizador": 64,
+      "pasos_omitidos": 0
+    },
+    {
+      "epoca": 2,
+      "loss_train": 0.6859417022205889,
+      "pares": 128,
+      "accuracy": 0.578125,
+      "empates": 0,
+      "loss": 0.6803275942802429,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 64,
+          "accuracy": 0.671875,
+          "empates": 0,
+          "loss": 0.6554920077323914
+        },
+        "harmless-base": {
+          "pares": 64,
+          "accuracy": 0.484375,
+          "empates": 0,
+          "loss": 0.7051630020141602
+        }
+      },
+      "segundos": 19.68,
+      "loss_ponderada": 0.6886060039202372,
+      "lr_siguiente": 7.420289855072465e-06,
+      "pasos_optimizador": 128,
+      "pasos_omitidos": 0
+    },
+    {
+      "epoca": 3,
+      "loss_train": 0.6559291956946254,
+      "pares": 128,
+      "accuracy": 0.5859375,
+      "empates": 0,
+      "loss": 0.6692737340927124,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 64,
+          "accuracy": 0.625,
+          "empates": 0,
+          "loss": 0.6460878849029541
+        },
+        "harmless-base": {
+          "pares": 64,
+          "accuracy": 0.546875,
+          "empates": 0,
+          "loss": 0.6924595236778259
+        }
+      },
+      "segundos": 19.55,
+      "loss_ponderada": 0.6770023107528687,
+      "lr_siguiente": 5.565217391304348e-06,
+      "pasos_optimizador": 192,
+      "pasos_omitidos": 0
+    },
+    {
+      "epoca": 4,
+      "loss_train": 0.5976043285336345,
+      "pares": 128,
+      "accuracy": 0.5859375,
+      "empates": 0,
+      "loss": 0.6677499413490295,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 64,
+          "accuracy": 0.59375,
+          "empates": 0,
+          "loss": 0.6465458869934082
+        },
+        "harmless-base": {
+          "pares": 64,
+          "accuracy": 0.578125,
+          "empates": 0,
+          "loss": 0.6889541149139404
+        }
+      },
+      "segundos": 19.6,
+      "loss_ponderada": 0.6748180389404297,
+      "lr_siguiente": 3.7101449275362323e-06,
+      "pasos_optimizador": 256,
+      "pasos_omitidos": 0
+    },
+    {
+      "epoca": 5,
+      "loss_train": 0.5276580397039652,
+      "pares": 128,
+      "accuracy": 0.625,
+      "empates": 0,
+      "loss": 0.6804926991462708,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 64,
+          "accuracy": 0.625,
+          "empates": 0,
+          "loss": 0.6653710603713989
+        },
+        "harmless-base": {
+          "pares": 64,
+          "accuracy": 0.625,
+          "empates": 0,
+          "loss": 0.6956143379211426
+        }
+      },
+      "segundos": 19.45,
+      "loss_ponderada": 0.6855332454045614,
+      "lr_siguiente": 1.8550724637681161e-06,
+      "pasos_optimizador": 320,
+      "pasos_omitidos": 0
+    },
+    {
+      "epoca": 6,
+      "loss_train": 0.48016410460695624,
+      "pares": 128,
+      "accuracy": 0.6015625,
+      "empates": 0,
+      "loss": 0.6867496967315674,
+      "por_fuente": {
+        "helpful-base": {
+          "pares": 64,
+          "accuracy": 0.578125,
+          "empates": 0,
+          "loss": 0.6740766167640686
+        },
+        "harmless-base": {
+          "pares": 64,
+          "accuracy": 0.625,
+          "empates": 0,
+          "loss": 0.6994228959083557
+        }
+      },
+      "segundos": 19.45,
+      "loss_ponderada": 0.6909741361935934,
+      "lr_siguiente": 0.0,
+      "pasos_optimizador": 384,
+      "pasos_omitidos": 0
+    }
+  ],
+  "mejor_epoca": 4,
+  "validacion": {
+    "pares": 128,
+    "accuracy": 0.5859375,
+    "empates": 0,
+    "loss": 0.6677499413490295,
+    "por_fuente": {
+      "helpful-base": {
+        "pares": 64,
+        "accuracy": 0.59375,
+        "empates": 0,
+        "loss": 0.6465458869934082
+      },
+      "harmless-base": {
+        "pares": 64,
+        "accuracy": 0.578125,
+        "empates": 0,
+        "loss": 0.6889541149139404
+      }
+    }
+  },
+  "recortes": {
+    "train": {
+      "pares_prompt_truncado": 2,
+      "preferidas_truncadas": 1,
+      "rechazadas_truncadas": 0
+    },
+    "val": {
+      "pares_prompt_truncado": 0,
+      "preferidas_truncadas": 0,
+      "rechazadas_truncadas": 0
+    }
+  },
+  "normalizacion": {
+    "media": 0.0899546891450882,
+    "desv": 0.5189932584762573,
+    "respuestas": 2048
+  },
+  "pesos_sha256": "8ca9df234adf743a860dd371ba949312dab1a69ecfd598a1e6b5c381255024e6"
+}

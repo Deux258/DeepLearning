@@ -1,0 +1,77 @@
+{
+  "procedencia": {
+    "version": 1,
+    "muestra": "recompensa_confirmacion.jsonl",
+    "muestra_sha256": "7fda08f4c70ce2c73fc9b69810af0d4adad86f891736b1caf1e5e20d7f3778a9",
+    "dataset_revision": "09be8c5bbc57cb3887f3a9732ad6aa7ec602a1fa",
+    "semilla": 42,
+    "pesos_sha256": {
+      "recompensa_distilbert_6e": "8ca9df234adf743a860dd371ba949312dab1a69ecfd598a1e6b5c381255024e6",
+      "recompensa_distilbert_6e_ampliada": "41010e23556ebae1c78daf6c3fe7eb74e73f12ae17c5ca6219f8ab6b356de805"
+    }
+  },
+  "pares_sha256": "63771b7749908cd8e1d933bde22c0e618b4c5c15ce012f7137ee2bf2431a1353",
+  "referencia": {
+    "pares": 1024,
+    "accuracy": 0.5849609375,
+    "empates": 0,
+    "loss": 0.6673737168312073,
+    "por_fuente": {
+      "helpful-base": {
+        "pares": 512,
+        "accuracy": 0.603515625,
+        "empates": 0,
+        "loss": 0.6528101563453674
+      },
+      "harmless-base": {
+        "pares": 512,
+        "accuracy": 0.56640625,
+        "empates": 0,
+        "loss": 0.6819372177124023
+      }
+    }
+  },
+  "candidata": {
+    "pares": 1024,
+    "accuracy": 0.6376953125,
+    "empates": 0,
+    "loss": 0.6595830917358398,
+    "por_fuente": {
+      "helpful-base": {
+        "pares": 512,
+        "accuracy": 0.65625,
+        "empates": 0,
+        "loss": 0.6575908064842224
+      },
+      "harmless-base": {
+        "pares": 512,
+        "accuracy": 0.619140625,
+        "empates": 0,
+        "loss": 0.661575436592102
+      }
+    }
+  },
+  "por_fuente": {
+    "helpful-base": {
+      "pares": 512,
+      "ganadas": 62,
+      "perdidas": 35,
+      "delta_accuracy": 0.052734375,
+      "p_mcnemar_unilateral": 0.003979727711223341
+    },
+    "harmless-base": {
+      "pares": 512,
+      "ganadas": 83,
+      "perdidas": 56,
+      "delta_accuracy": 0.052734375,
+      "p_mcnemar_unilateral": 0.013536764546994902
+    }
+  },
+  "criterios": {
+    "harmless_mejora_minima": true,
+    "harmless_mcnemar": true,
+    "harmless_perdida": true,
+    "helpful_tolerancia": true
+  },
+  "aprobada": true
+}

@@ -1,0 +1,84 @@
+{
+  "config": {
+    "version": 1,
+    "modelo_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
+    "particiones": {
+      "sft": "af51b035d5b7f9fa9768562812500309aeb0d48721409d309ddda2083db3709b",
+      "recompensa_train": "cd9d1ebfc2c9d24905e30e17baa6d4655cde987ebfc30b379d9be71b05cf8269",
+      "recompensa_val": "4ef637972a6d64b384f5db2337c7e3aa01758b7c54b018d4ebd51c0160752dad",
+      "ppo": "16f19d8c56453d173ebf206800fe5363cac78508c0e21de1cb99e3b953c04673"
+    },
+    "seed": 42,
+    "piloto": true,
+    "sft": "sft_lr5e5",
+    "sft_sha256": {
+      "adapter_model.safetensors": "293d842e5aa272e42fcaaad7569925bc05f1b44fe11131ec2917609226676d4e",
+      "adapter_config.json": "5bf8b97f2e107918db078e0d89a629667db50f4625770de85c39924735e117d1"
+    },
+    "recompensa": "recompensa_distilbert_piloto",
+    "recompensa_sha256": "252c625fbb1b756cf19e14eb2d469e3eb47247c2b31c19a2c9dc5661d2c9443e",
+    "normalizacion": {
+      "media": -0.005567327607423067,
+      "desv": 0.027020422741770744,
+      "respuestas": 64
+    },
+    "prompts": 4,
+    "max_prompt": 128,
+    "max_response": 32,
+    "gamma": 1.0,
+    "lambda": 0.95,
+    "precision": "NF4/FP16",
+    "lr_politica": 3e-06,
+    "lr_valor": 0.0001,
+    "clip": 0.2,
+    "beta_kl": 0.05,
+    "coef_valor": 0.5,
+    "max_grad_norm": 1.0,
+    "batch": 4,
+    "epochs": 2,
+    "checkpoint_cada": 1
+  },
+  "firma": "5883640752d32412b38f5769ec39a8ca0106b2bdeb2440b74ee3c544b2b0a926",
+  "historial": [
+    {
+      "lote": 1,
+      "prompts": [
+        "helpful-base/train/8145",
+        "harmless-base/train/3375",
+        "helpful-base/train/10390",
+        "harmless-base/train/641"
+      ],
+      "kl_por_token": 0.0,
+      "kl_inicial_max": 0.0,
+      "recompensa": -0.002295940648764372,
+      "recompensa_normalizada": 0.12107090218101857,
+      "longitud_media": 19.75,
+      "vacias": 0,
+      "recorte_recompensa_prompt": 0,
+      "recorte_recompensa_respuesta": 0,
+      "segundos": 40.62,
+      "actualizaciones": [
+        {
+          "epoca_ppo": 1,
+          "loss_politica": -1.2071827093507181e-08,
+          "loss_valor": 0.031773194670677185,
+          "fraccion_clip": 0.0,
+          "norma_grad": 2.164155960083008,
+          "error_ratio_inicial": 0.0
+        },
+        {
+          "epoca_ppo": 2,
+          "loss_politica": -0.004153722431510687,
+          "loss_valor": 0.045808449387550354,
+          "fraccion_clip": 0.0,
+          "norma_grad": 7.904340744018555,
+          "error_ratio_inicial": null
+        }
+      ]
+    }
+  ],
+  "referencia_intacta": true,
+  "politica_actualizada": true,
+  "valor_actualizado": true,
+  "pesos_sha256": "707484f4c6bfbbe951ea30de0bb3e532073721e336f5e8bd55fa3dda1fec2318"
+}

@@ -1,4 +1,14 @@
 /.runtime/
-/salidas/
+/salidas/**
+!/salidas/**/
+!/salidas/particiones/**/*.jsonl
+!/salidas/respuestas*/**/*.csv
+!/salidas/**/reporte.json
+!/salidas/**/confirmacion.json
+!/salidas/**/trainer_state.json
+!/salidas/**/*.png
+/salidas/**/checkpoints/
+/salidas/*_checkpoints/
+/salidas/.*/
 /__pycache__/
 /.ipynb_checkpoints/

@@ -21,7 +21,7 @@ from transformers import (
 )
 
 from comun import (
-    DATASET_ID, DATASET_REV, MAX_PPO_PROMPT_TOKENS, MODEL_REV, OUT, SEED, SFT_DIR, SOURCES,
+    DATASET_ID, DATASET_REV, EXPANDED_QUOTAS, MAX_PPO_PROMPT_TOKENS, MODEL_REV, OUT, SEED, SFT_DIR, SOURCES,
     chat_tokens, load_model, load_prompts, load_tokenizer, prepare_partitions, prompt_key, single_turn,
 )
 
@@ -31,7 +31,9 @@ REWARD_REV = "12040accade4e8a0f71eabdb258fecc2e7e948be"
 REWARD_DIR = "recompensa_distilbert"
 PPO_DIR = "ppo_lr3e6"
 REWARD_6E_DIR = f"{REWARD_DIR}_6e"
+REWARD_EXPANDED_DIR = f"{REWARD_6E_DIR}_ampliada"
 PPO_6E_DIR = f"{PPO_DIR}_6e"
+PPO_EXPERIMENTS = {"ppo_lr1e5_512": 1e-5, "ppo_lr3e5_512": 3e-5}
 CONFIRMATION_PER_SOURCE = 512
 PPO_BATCH = 4
 PPO_LR = 3e-6
@@ -69,22 +71,31 @@ def stage_output(path):
     return Path(mkdtemp(prefix=f".{path.name}-", dir=path.parent))
 
 
-def read_partitions(pilot):
+def read_partitions(pilot, *, expanded=False):
     folder = OUT / "particiones"
-    quotas = {"sft": 256, "recompensa_train": 512, "recompensa_val": 64, "ppo": 64}
+    holdout = folder / "recompensa_confirmacion.jsonl"
+    if expanded:
+        if not holdout.is_file():
+            reference, _ = read_partitions(False)
+            confirmation_sample(reference)
+        folder /= "ampliadas"
+    quotas = EXPANDED_QUOTAS if expanded else {"sft": 256, "recompensa_train": 512, "recompensa_val": 64, "ppo": 64}
     paths = {key: folder / f"{key}.jsonl" for key in quotas}
     if not all(path.is_file() for path in paths.values()):
         print("Preparando particiones de HH-RLHF…", flush=True)
-        prepare_partitions(load_tokenizer())
+        prepare_partitions(load_tokenizer(), expanded=expanded)
 
     used = {prompt_key(row["prompt"]) for group in load_prompts().values() for row in group}
+    if expanded:
+        used.update(prompt_key(json.loads(line)["prompt"])
+                    for line in holdout.read_text(encoding="utf-8").splitlines())
     ids, hashes, selections = set(), {}, {}
     for name in quotas:
         hashes[name] = digest(paths[name])
         rows = [json.loads(line) for line in paths[name].read_text(encoding="utf-8").splitlines()]
         if Counter(row["source"] for row in rows) != dict.fromkeys(SOURCES, quotas[name]):
             raise ValueError(f"El tamaño o balance de {name} difiere de la partición esperada.")
-        split = "test" if name == "recompensa_val" else "train"
+        split = "test" if name == "recompensa_val" and not expanded else "train"
         for row in rows:
             key = prompt_key(row["prompt"])
             if not key or key in used or row["id"] in ids or row["split"] != split:
@@ -96,7 +107,7 @@ def read_partitions(pilot):
             used.add(key)
             ids.add(row["id"])
         if pilot and name != "sft":
-            quota = 16 if name == "recompensa_train" else (8 if name == "recompensa_val" else 2)
+            quota = 16 if name == "recompensa_train" else (8 if name == "recompensa_val" else (4 if expanded else 2))
             by_source = [[row for row in rows if row["source"] == source][:quota] for source in SOURCES]
             rows = [row for group in by_source for row in group]
         selections[name] = rows
@@ -169,8 +180,9 @@ def reward_6e_key(metrics):
     return (-(helpful["loss"] + 2 * harmless["loss"]) / 3, harmless["accuracy"])
 
 
-def train_reward(parts, hashes, pilot, *, six_epochs=False):
-    path = OUT / output_name(REWARD_6E_DIR if six_epochs else REWARD_DIR, pilot)
+def train_reward(parts, hashes, pilot, *, six_epochs=False, expanded=False):
+    six_epochs = six_epochs or expanded
+    path = OUT / output_name(REWARD_EXPANDED_DIR if expanded else (REWARD_6E_DIR if six_epochs else REWARD_DIR), pilot)
     config = {
         "version": 1, "modelo": REWARD_ID, "revision": REWARD_REV, "dataset": DATASET_REV,
         "piloto": pilot, "seed": SEED, "particiones": hashes, "lr": 2e-5, "weight_decay": 0.01,
@@ -351,18 +363,24 @@ def confirmation_criteria(paired, reference, candidate):
 
 
 def confirm_reward(parts, hashes, reward_path, reward_meta):
-    if (reward_path.name != REWARD_6E_DIR or reward_meta["config"]["particiones"] != hashes
+    expanded = reward_path.name == REWARD_EXPANDED_DIR
+    if (reward_path.name not in (REWARD_6E_DIR, REWARD_EXPANDED_DIR) or reward_meta["config"]["particiones"] != hashes
             or [row["epoca"] for row in reward_meta["historial"]] != list(range(1, 7))):
         raise ValueError("La confirmación requiere la corrida completa de seis épocas y sus particiones.")
-    reference_path = OUT / REWARD_DIR
+    reference_path = OUT / (REWARD_6E_DIR if expanded else REWARD_DIR)
     reference_meta = read_json(reference_path / "reporte.json")
-    if reference_meta["config"]["particiones"] != hashes:
+    reference_parts, reference_hashes = read_partitions(False) if expanded else (parts, hashes)
+    if reference_meta["config"]["particiones"] != reference_hashes:
         raise ValueError("Las particiones no coinciden con las de la recompensa de referencia.")
     model_hashes = {path.name: digest(path / "model.safetensors") for path in (reference_path, reward_path)}
     if (model_hashes[reference_path.name] != reference_meta["pesos_sha256"]
             or model_hashes[reward_path.name] != reward_meta["pesos_sha256"]):
         raise ValueError("Los pesos de recompensa no coinciden con sus reportes.")
-    sample, rows = confirmation_sample(parts)
+    sample, rows = confirmation_sample(reference_parts)
+    if expanded:
+        used = {prompt_key(row["prompt"]) for split in parts.values() for row in split}
+        if any(prompt_key(row["prompt"]) in used for row in rows):
+            raise ValueError("La muestra independiente se solapa con las nuevas particiones.")
     provenance = {"version": 1, "muestra": sample.name, "muestra_sha256": digest(sample),
                   "dataset_revision": DATASET_REV, "semilla": SEED, "pesos_sha256": model_hashes}
     report_path = reward_path / "confirmacion.json"
@@ -438,6 +456,24 @@ def action_stats(base, critic, sequence, prompt_length):
     return logp, critic(states.float()).reshape(-1)
 
 
+def action_stats_batch(base, critic, rows, pad_id):
+    if len(rows) == 1:
+        row = rows[0]
+        return action_stats(base, critic, row["sequence"], row["prompt_length"])
+    sequences = [row["sequence"].flatten() for row in rows]
+    width = max(seq.numel() for seq in sequences)
+    ids = torch.stack([F.pad(seq, (0, width - seq.numel()), value=pad_id) for seq in sequences])
+    mask = torch.arange(width, device=ids.device)[None, :] < ids.new_tensor([seq.numel() for seq in sequences])[:, None]
+    hidden = base.model(input_ids=ids, attention_mask=mask.long(), use_cache=False).last_hidden_state
+    action_mask = mask & (torch.arange(width, device=ids.device)[None, :] >=
+                          ids.new_tensor([row["prompt_length"] for row in rows])[:, None])
+    states = hidden[:, :-1][action_mask[:, 1:]]
+    head = base.get_output_embeddings()
+    logits = head(states.to(head.weight.dtype)).float()
+    targets = ids[action_mask]
+    return logits.log_softmax(-1).gather(-1, targets[:, None]).flatten(), critic(states.float()).flatten()
+
+
 def check_ppo_math():
     rewards = torch.tensor([0.0, 1.0])
     advantages, returns = gae(rewards, torch.tensor([0.2, 0.3]))
@@ -454,12 +490,12 @@ def check_ppo_math():
     assert torch.equal(action_states(torch.arange(5).view(1, -1), 3, 2), torch.tensor([[2, 3]]))
 
 
-def balanced_batches(rows):
-    rng = random.Random(SEED)
+def balanced_batches(rows, batch_size=PPO_BATCH, pass_index=0):
+    rng = random.Random(SEED + pass_index)
     helpful, harmless = [[row for row in rows if row["source"] == source] for source in SOURCES]
     rng.shuffle(helpful)
     rng.shuffle(harmless)
-    half = PPO_BATCH // 2
+    half = batch_size // 2
     for offset in range(0, len(helpful), half):
         batch = helpful[offset:offset + half] + harmless[offset:offset + half]
         rng.shuffle(batch)
@@ -493,7 +529,8 @@ def load_ppo_checkpoint(path, config_hash):
 
 
 @torch.no_grad()
-def collect_rollouts(batch, model, critic, tokenizer, reward_model, reward_tokenizer, generation, stats):
+def collect_rollouts(batch, model, critic, tokenizer, reward_model, reward_tokenizer, generation, stats,
+                     *, beta=KL_BETA, microbatch=1, generation_batch=None):
     model.eval()
     base = model.get_base_model()
     prompts = [chat_tokens(tokenizer, [{"role": "user", "content": row["prompt"]}], generation=True)
@@ -506,36 +543,57 @@ def collect_rollouts(batch, model, critic, tokenizer, reward_model, reward_token
                            for pad, prompt in zip(pads, prompts, strict=True)], device=model.device)
     mask = torch.tensor([[0] * pad + [1] * len(prompt)
                          for pad, prompt in zip(pads, prompts, strict=True)], device=model.device)
-    generated = model.generate(input_ids=inputs, attention_mask=mask, generation_config=generation)
+    generation_batch = generation_batch or len(batch)
+    generated = []
+    for start in range(0, len(batch), generation_batch):
+        output = model.generate(input_ids=inputs[start:start + generation_batch],
+                                attention_mask=mask[start:start + generation_batch], generation_config=generation)
+        generated.extend(output[:, width:].tolist())
     eos = generation.eos_token_id
     stop_ids = {eos} if isinstance(eos, int) else set(eos or [])
     rollouts = []
-    for row, prompt, tokens in zip(batch, prompts, generated[:, width:].tolist(), strict=True):
+    answers = []
+    for prompt, tokens in zip(prompts, generated, strict=True):
         end = next((i + 1 for i, token in enumerate(tokens) if token in stop_ids), len(tokens))
         if not end:
             raise RuntimeError("La política no emitió ninguna acción.")
         actions = tokens[:end]
         sequence = torch.tensor([prompt + actions], device=model.device)
-        answer = tokenizer.decode(actions, skip_special_tokens=True).strip()
-        encoded, shortened = reward_inputs(reward_tokenizer, [row["prompt"]], [answer])
-        reward = reward_model(**reward_tokenizer.pad(encoded, return_tensors="pt")).logits.item()
+        answers.append(tokenizer.decode(actions, skip_special_tokens=True).strip())
+        rollouts.append({"sequence": sequence, "prompt_length": len(prompt), "actions": end})
+
+    encoded, shortened = reward_inputs(reward_tokenizer, [row["prompt"] for row in batch], answers)
+    scores = reward_model(**reward_tokenizer.pad(encoded, return_tensors="pt")).logits.flatten().tolist()
+    old_policy, old_values, reference = [], [], []
+    for start in range(0, len(rollouts), microbatch):
+        group = rollouts[start:start + microbatch]
+        counts = [row["actions"] for row in group]
+        logp, values = action_stats_batch(base, critic, group, generation.pad_token_id)
+        old_policy.extend(logp.split(counts))
+        old_values.extend(values.split(counts))
+    model.set_adapter("referencia", inference_mode=True)
+    try:
+        for start in range(0, len(rollouts), microbatch):
+            group = rollouts[start:start + microbatch]
+            logp, _ = action_stats_batch(base, critic, group, generation.pad_token_id)
+            reference.extend(logp.split([row["actions"] for row in group]))
+    finally:
+        model.set_adapter("default")
+
+    for row, answer, reward, truncated, old_logp, values, ref_logp in zip(
+        rollouts, answers, scores, shortened, old_policy, old_values, reference, strict=True,
+    ):
         if not math.isfinite(reward):
             raise FloatingPointError("El modelo de recompensa produjo un puntaje no finito.")
         normalized = max(-5.0, min(5.0, (reward - stats["media"]) / max(stats["desv"], 1e-6)))
-        old_logp, old_values = action_stats(base, critic, sequence, len(prompt))
-        model.set_adapter("referencia", inference_mode=True)
-        try:
-            ref_logp, _ = action_stats(base, critic, sequence, len(prompt))
-        finally:
-            model.set_adapter("default")
         kl = old_logp - ref_logp
-        rewards = -KL_BETA * kl
+        rewards = -beta * kl
         rewards[-1] += normalized
-        advantages, returns = gae(rewards, old_values)
-        rollouts.append({
-            "sequence": sequence, "prompt_length": len(prompt), "old_logp": old_logp,
-            "old_values": old_values, "advantages": advantages, "returns": returns, "kl": kl,
-            "reward": reward, "normalized": normalized, "blank": not answer, "truncated": shortened[0],
+        advantages, returns = gae(rewards.cpu(), values.cpu())
+        row.update({
+            "old_logp": old_logp, "old_values": values, "advantages": advantages.to(kl.device),
+            "returns": returns.to(kl.device), "kl": kl, "reward": reward, "normalized": normalized,
+            "blank": not answer, "truncated": truncated,
         })
 
     advantages_all = torch.cat([row["advantages"] for row in rollouts])
@@ -545,7 +603,7 @@ def collect_rollouts(batch, model, critic, tokenizer, reward_model, reward_token
     return rollouts
 
 
-def update_policy(model, critic, optimizer, rollouts, parameters, epochs):
+def update_policy(model, critic, optimizer, rollouts, parameters, epochs, *, microbatch=1, pad_id=0):
     model.train()
     base = model.get_base_model()
     actions = sum(row["old_logp"].numel() for row in rollouts)
@@ -554,13 +612,17 @@ def update_policy(model, critic, optimizer, rollouts, parameters, epochs):
         optimizer.zero_grad(set_to_none=True)
         totals = torch.zeros(3, device=model.device)
         ratio_error = 0.0
-        for row in rollouts:
-            new_logp, values = action_stats(base, critic, row["sequence"], row["prompt_length"])
+        for start in range(0, len(rollouts), microbatch):
+            group = rollouts[start:start + microbatch]
+            new_logp, values = action_stats_batch(base, critic, group, pad_id)
+            old_logp, old_values, advantages, returns = (
+                torch.cat([row[key] for row in group]) for key in ("old_logp", "old_values", "advantages", "returns")
+            )
             policy, value, clipped = ppo_losses(
-                new_logp, row["old_logp"], values, row["old_values"], row["advantages"], row["returns"],
+                new_logp, old_logp, values, old_values, advantages, returns,
             )
             if epoch == 0:
-                ratio_error = max(ratio_error, ((new_logp.detach() - row["old_logp"]).exp() - 1).abs().max().item())
+                ratio_error = max(ratio_error, ((new_logp.detach() - old_logp).exp() - 1).abs().max().item())
             policy_sum, value_sum = policy.sum(), value.sum()
             ((policy_sum + 0.5 * value_sum) / actions).backward()
             totals += torch.stack((policy_sum.detach(), value_sum.detach(), clipped.sum()))
@@ -577,11 +639,20 @@ def update_policy(model, critic, optimizer, rollouts, parameters, epochs):
     return history
 
 
-def train_ppo(parts, hashes, reward_path, reward_meta, pilot):
+def train_ppo(parts, hashes, reward_path, reward_meta, pilot, *, experiment=None, passes=1,
+              microbatch=2, generation_batch=8, beta=KL_BETA):
     check_ppo_math()
+    if experiment is not None:
+        if experiment not in PPO_EXPERIMENTS or passes not in (1, 2) or microbatch not in (1, 2, 4, 8):
+            raise ValueError("Configuración de experimento PPO inválida.")
+        if generation_batch not in (2, 4, 8) or beta not in (0.02, 0.05, 0.1):
+            raise ValueError("Lote de generación o coeficiente KL inválido.")
+        expected = 4 if pilot else 256
+        if Counter(row["source"] for row in parts["ppo"]) != dict.fromkeys(SOURCES, expected):
+            raise ValueError(f"El experimento PPO requiere {expected} prompts por fuente.")
     six_epochs = reward_path.name in (REWARD_6E_DIR, output_name(REWARD_6E_DIR, True))
     if six_epochs:
-        if pilot:
+        if pilot and experiment is None:
             raise ValueError("La recompensa piloto se usa para verificar el entrenamiento; PPO requiere confirmación final.")
         gate = reward_path / "confirmacion.json"
         confirmation = read_json(gate)
@@ -610,6 +681,13 @@ def train_ppo(parts, hashes, reward_path, reward_meta, pilot):
     }
     if six_epochs:
         config["confirmacion_sha256"] = digest(gate)
+    if experiment is not None:
+        config.update(version=3, lr_politica=PPO_EXPERIMENTS[experiment], batch=8, epochs=4,
+                      pasadas=passes, microlote=microbatch, lote_generacion=generation_batch, beta_kl=beta)
+        suffix = "" if (passes, microbatch, generation_batch, beta) == (1, 2, 8, KL_BETA) else (
+            f"_p{passes}_m{microbatch}_g{generation_batch}_kl{beta:g}"
+        )
+        path = OUT / output_name(experiment + suffix, pilot)
     config_hash = signature(config)
     if path.exists():
         meta = read_json(path / "reporte.json")
@@ -648,7 +726,7 @@ def train_ppo(parts, hashes, reward_path, reward_meta, pilot):
                                 for name, param in model.named_parameters()):
         raise RuntimeError("Solo el adaptador de política debe tener gradientes en Phi-3.")
     optimizer = torch.optim.AdamW([
-        {"params": policy_params, "lr": PPO_LR}, {"params": critic_params, "lr": VALUE_LR},
+        {"params": policy_params, "lr": config["lr_politica"]}, {"params": critic_params, "lr": config["lr_valor"]},
     ], weight_decay=0.0)
     if checkpoint:
         state = torch.load(checkpoint / "estado.pt", weights_only=True, map_location="cpu")
@@ -660,14 +738,21 @@ def train_ppo(parts, hashes, reward_path, reward_meta, pilot):
         del state
         print(f"PPO retoma desde el lote {len(history)}.", flush=True)
 
-    batches = list(balanced_batches(parts["ppo"]))
+    batches = [batch for pass_index in range(config.get("pasadas", 1))
+               for batch in balanced_batches(parts["ppo"], config["batch"], pass_index)]
     for step, batch in enumerate(batches[len(history):], start=len(history) + 1):
         start = monotonic()
-        rollouts = collect_rollouts(batch, model, critic, tokenizer, reward_model, reward_tokenizer, generation, stats)
+        microbatch = config.get("microlote", 1)
+        rollouts = collect_rollouts(batch, model, critic, tokenizer, reward_model, reward_tokenizer, generation, stats,
+                                    beta=config["beta_kl"], microbatch=microbatch,
+                                    generation_batch=config.get("lote_generacion"))
         kl = torch.cat([row["kl"] for row in rollouts])
         if step == 1 and not torch.allclose(kl, torch.zeros_like(kl), atol=2e-3, rtol=0):
             raise RuntimeError("La política inicial y la referencia SFT discrepan.")
-        updates = update_policy(model, critic, optimizer, rollouts, policy_params + critic_params, config["epochs"])
+        updates = update_policy(
+            model, critic, optimizer, rollouts, policy_params + critic_params, config["epochs"],
+            microbatch=microbatch, pad_id=generation.pad_token_id,
+        )
         report = {
             "lote": step, "prompts": [row["id"] for row in batch], "kl_por_token": kl.mean().item(),
             "kl_inicial_max": kl.abs().max().item() if step == 1 else None,
@@ -678,6 +763,10 @@ def train_ppo(parts, hashes, reward_path, reward_meta, pilot):
             "recorte_recompensa_respuesta": sum(row["truncated"][1] for row in rollouts),
             "segundos": round(monotonic() - start, 2), "actualizaciones": updates,
         }
+        if experiment is not None:
+            report.update(pasada=(step - 1) // (len(parts["ppo"]) // config["batch"]) + 1,
+                          tokens=len(kl), kl_estimador=(-kl).expm1().add(kl).mean().item(),
+                          pico_memoria_gib=torch.cuda.max_memory_allocated() / 1024**3)
         history.append(report)
         print(f"PPO {step}/{len(batches)} · recompensa {report['recompensa']:.3f} · "
               f"KL {report['kl_por_token']:.4f} · {report['segundos']:.0f} s", flush=True)
