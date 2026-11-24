@@ -1,6 +1,7 @@
 """Entrenamiento por preferencias humanas de Phi-3."""
 
 import gc
+import gzip
 import json
 import math
 import random
@@ -15,11 +16,13 @@ from peft import PeftModel, get_peft_model_state_dict, prepare_model_for_kbit_tr
 from safetensors.torch import load_file
 from torch import nn
 from torch.nn import functional as F
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, GenerationConfig, set_seed
+from transformers import (
+    AutoModelForSequenceClassification, AutoTokenizer, GenerationConfig, get_linear_schedule_with_warmup, set_seed,
+)
 
 from comun import (
-    DATASET_REV, MAX_PPO_PROMPT_TOKENS, MODEL_REV, OUT, SEED, SFT_DIR, SOURCES,
-    chat_tokens, load_model, load_prompts, load_tokenizer, prepare_partitions, prompt_key,
+    DATASET_ID, DATASET_REV, MAX_PPO_PROMPT_TOKENS, MODEL_REV, OUT, SEED, SFT_DIR, SOURCES,
+    chat_tokens, load_model, load_prompts, load_tokenizer, prepare_partitions, prompt_key, single_turn,
 )
 
 
@@ -27,6 +30,9 @@ REWARD_ID = "distilbert/distilbert-base-uncased"
 REWARD_REV = "12040accade4e8a0f71eabdb258fecc2e7e948be"
 REWARD_DIR = "recompensa_distilbert"
 PPO_DIR = "ppo_lr3e6"
+REWARD_6E_DIR = f"{REWARD_DIR}_6e"
+PPO_6E_DIR = f"{PPO_DIR}_6e"
+CONFIRMATION_PER_SOURCE = 512
 PPO_BATCH = 4
 PPO_LR = 3e-6
 VALUE_LR = 1e-4
@@ -157,14 +163,27 @@ def validate_reward(model, tokenizer, rows, pairs):
     return {**preference_metrics(margins), "por_fuente": by_source}, raw
 
 
-def train_reward(parts, hashes, pilot):
-    path = OUT / output_name(REWARD_DIR, pilot)
+def reward_6e_key(metrics):
+    helpful = metrics["por_fuente"]["helpful-base"]
+    harmless = metrics["por_fuente"]["harmless-base"]
+    return (-(helpful["loss"] + 2 * harmless["loss"]) / 3, harmless["accuracy"])
+
+
+def train_reward(parts, hashes, pilot, *, six_epochs=False):
+    path = OUT / output_name(REWARD_6E_DIR if six_epochs else REWARD_DIR, pilot)
     config = {
         "version": 1, "modelo": REWARD_ID, "revision": REWARD_REV, "dataset": DATASET_REV,
         "piloto": pilot, "seed": SEED, "particiones": hashes, "lr": 2e-5, "weight_decay": 0.01,
         "epochs": 1 if pilot else 3, "pares_por_lote": 8, "acumulacion": 2,
         "max_prompt": 128, "max_total": 512,
     }
+    if six_epochs:
+        config.update(version=2, lr=1e-5, epochs=1 if pilot else 6,
+                      scheduler="linear", warmup_fraction=0.1, seleccion="perdida_ponderada_por_fuente")
+        steps_per_epoch = math.ceil(len(parts["recompensa_train"]) /
+                                    (config["pares_por_lote"] * config["acumulacion"]))
+        config["pasos_planificados"] = steps_per_epoch * config["epochs"]
+        config["pasos_warmup"] = math.ceil(config["pasos_planificados"] * config["warmup_fraction"])
     if path.exists():
         meta = read_json(path / "reporte.json")
         if meta["config"] != config or meta["pesos_sha256"] != digest(path / "model.safetensors"):
@@ -183,10 +202,17 @@ def train_reward(parts, hashes, pilot):
         REWARD_ID, revision=REWARD_REV, num_labels=1, use_safetensors=True,
     ).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
+    scheduler = None
+    if six_epochs:
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer, num_warmup_steps=config["pasos_warmup"], num_training_steps=config["pasos_planificados"],
+        )
     scaler = torch.amp.GradScaler(device.type, enabled=device.type == "cuda")
     rng = random.Random(SEED)
     history, best_state, best_key = [], None, (-math.inf, -math.inf)
     batch_size, accumulation = config["pares_por_lote"], config["acumulacion"]
+    updates, skipped = 0, 0
+    scale = scaler.get_scale()
     for epoch in range(1, config["epochs"] + 1):
         start = monotonic()
         model.train()
@@ -205,6 +231,14 @@ def train_reward(parts, hashes, pilot):
             if (i + 1) % accumulation == 0 or i + 1 == len(batches):
                 scaler.step(optimizer)
                 scaler.update()
+                if scheduler is not None:
+                    next_scale = scaler.get_scale()
+                    if next_scale < scale:
+                        skipped += 1
+                    else:
+                        scheduler.step()
+                        updates += 1
+                    scale = next_scale
                 optimizer.zero_grad(set_to_none=True)
             if (i + 1) % 16 == 0 or i + 1 == len(batches):
                 print(f"Recompensa {epoch}/{config['epochs']} · lote {i + 1}/{len(batches)}", flush=True)
@@ -214,7 +248,10 @@ def train_reward(parts, hashes, pilot):
             raise FloatingPointError("Pérdida o precisión no finita al entrenar la recompensa.")
         history.append({"epoca": epoch, "loss_train": train_loss, **metrics,
                         "segundos": round(monotonic() - start, 2)})
-        key = (metrics["accuracy"], -metrics["loss"])
+        key = reward_6e_key(metrics) if six_epochs else (metrics["accuracy"], -metrics["loss"])
+        if six_epochs:
+            history[-1].update(loss_ponderada=-key[0], lr_siguiente=optimizer.param_groups[0]["lr"],
+                               pasos_optimizador=updates, pasos_omitidos=skipped)
         if key > best_key:
             best_key, best_epoch = key, epoch
             best_state = {name: weight.detach().cpu().clone() for name, weight in model.state_dict().items()}
@@ -239,6 +276,124 @@ def train_reward(parts, hashes, pilot):
     write_json(stage / "reporte.json", meta)
     stage.replace(path)
     return path, meta
+
+
+def confirmation_sample(parts):
+    from huggingface_hub import hf_hub_download
+
+    used = {prompt_key(row["prompt"]) for rows in parts.values() for row in rows}
+    used.update(prompt_key(row["prompt"]) for group in load_prompts().values() for row in group)
+    rng = random.Random(SEED)
+    result = []
+    for source in SOURCES:
+        filename = hf_hub_download(DATASET_ID, f"{source}/test.jsonl.gz", repo_type="dataset", revision=DATASET_REV)
+        with gzip.open(filename, "rt", encoding="utf-8") as stream:
+            lines = list(enumerate(stream, start=1))
+        rng.shuffle(lines)
+        selected = 0
+        for number, line in lines:
+            pair = json.loads(line)
+            chosen, rejected = (single_turn(pair[key]) for key in ("chosen", "rejected"))
+            if not chosen or not rejected or chosen[0] != rejected[0] or chosen[1] == rejected[1]:
+                continue
+            key = prompt_key(chosen[0])
+            if key in used:
+                continue
+            used.add(key)
+            result.append({"id": f"{source}/test/{number}", "source": source, "split": "test",
+                           "prompt": chosen[0], "chosen": chosen[1], "rejected": rejected[1]})
+            selected += 1
+            if selected == CONFIRMATION_PER_SOURCE:
+                break
+        if selected != CONFIRMATION_PER_SOURCE:
+            raise ValueError(f"Confirmación: {source} solo tiene {selected} pares elegibles.")
+
+    path = OUT / "particiones" / "recompensa_confirmacion.jsonl"
+    content = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in result)
+    if path.exists():
+        if path.read_text(encoding="utf-8") != content:
+            raise ValueError(f"La muestra de confirmación existente no coincide con el muestreo fijado: {path}")
+    else:
+        temporary = path.with_suffix(".tmp")
+        temporary.write_text(content, encoding="utf-8")
+        temporary.replace(path)
+    return path, result
+
+
+def paired_preferences(reference, candidate):
+    if [(row["id"], row["source"]) for row in reference] != [(row["id"], row["source"]) for row in candidate]:
+        raise ValueError("La confirmación requiere los mismos pares en ambos modelos.")
+    comparisons = {}
+    for source in SOURCES:
+        flags = [(before["margen"] > 0, after["margen"] > 0)
+                 for before, after in zip(reference, candidate, strict=True) if before["source"] == source]
+        if not flags:
+            raise ValueError(f"La confirmación no tiene pares de {source}.")
+        wins = sum(not old and new for old, new in flags)
+        losses = sum(old and not new for old, new in flags)
+        discordant = wins + losses
+        comparisons[source] = {
+            "pares": len(flags), "ganadas": wins, "perdidas": losses, "delta_accuracy": (wins - losses) / len(flags),
+            "p_mcnemar_unilateral": sum(math.comb(discordant, i) for i in range(wins, discordant + 1)) / 2**discordant,
+        }
+    return comparisons
+
+
+def confirmation_criteria(paired, reference, candidate):
+    harmless = paired["harmless-base"]
+    return {
+        "harmless_mejora_minima": harmless["delta_accuracy"] >= 0.05,
+        "harmless_mcnemar": harmless["p_mcnemar_unilateral"] <= 0.05,
+        "harmless_perdida": candidate["por_fuente"]["harmless-base"]["loss"] <=
+                           reference["por_fuente"]["harmless-base"]["loss"],
+        "helpful_tolerancia": paired["helpful-base"]["delta_accuracy"] >= -0.05,
+    }
+
+
+def confirm_reward(parts, hashes, reward_path, reward_meta):
+    if (reward_path.name != REWARD_6E_DIR or reward_meta["config"]["particiones"] != hashes
+            or [row["epoca"] for row in reward_meta["historial"]] != list(range(1, 7))):
+        raise ValueError("La confirmación requiere la corrida completa de seis épocas y sus particiones.")
+    reference_path = OUT / REWARD_DIR
+    reference_meta = read_json(reference_path / "reporte.json")
+    if reference_meta["config"]["particiones"] != hashes:
+        raise ValueError("Las particiones no coinciden con las de la recompensa de referencia.")
+    model_hashes = {path.name: digest(path / "model.safetensors") for path in (reference_path, reward_path)}
+    if (model_hashes[reference_path.name] != reference_meta["pesos_sha256"]
+            or model_hashes[reward_path.name] != reward_meta["pesos_sha256"]):
+        raise ValueError("Los pesos de recompensa no coinciden con sus reportes.")
+    sample, rows = confirmation_sample(parts)
+    provenance = {"version": 1, "muestra": sample.name, "muestra_sha256": digest(sample),
+                  "dataset_revision": DATASET_REV, "semilla": SEED, "pesos_sha256": model_hashes}
+    report_path = reward_path / "confirmacion.json"
+    raw_path = reward_path / "confirmacion_pares.json"
+    if report_path.is_file():
+        report = read_json(report_path)
+        if report["procedencia"] != provenance or report["pares_sha256"] != digest(raw_path):
+            raise ValueError("La confirmación existente no coincide con esta corrida.")
+        return report
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    metrics, scores = [], []
+    for path in (reference_path, reward_path):
+        print(f"Confirmación · {path.name} · {len(rows)} pares en {device}", flush=True)
+        tokenizer = AutoTokenizer.from_pretrained(path)
+        pairs, _ = reward_pairs(tokenizer, rows)
+        model = AutoModelForSequenceClassification.from_pretrained(path).to(device)
+        stats, raw = validate_reward(model, tokenizer, rows, pairs)
+        metrics.append(stats)
+        scores.append(raw)
+        del model
+    paired = paired_preferences(*scores)
+    criteria = confirmation_criteria(paired, *metrics)
+    raw = [{**row, "candidata": other["margen"]} for row, other in zip(*scores, strict=True)]
+    write_json(raw_path, raw)
+    report = {
+        "procedencia": provenance, "pares_sha256": digest(raw_path), "referencia": metrics[0],
+        "candidata": metrics[1], "por_fuente": paired, "criterios": criteria, "aprobada": all(criteria.values()),
+    }
+    write_json(report_path, report)
+    return report
 
 
 def clear_gpu():
@@ -424,13 +579,25 @@ def update_policy(model, critic, optimizer, rollouts, parameters, epochs):
 
 def train_ppo(parts, hashes, reward_path, reward_meta, pilot):
     check_ppo_math()
+    six_epochs = reward_path.name in (REWARD_6E_DIR, output_name(REWARD_6E_DIR, True))
+    if six_epochs:
+        if pilot:
+            raise ValueError("La recompensa piloto se usa para verificar el entrenamiento; PPO requiere confirmación final.")
+        gate = reward_path / "confirmacion.json"
+        confirmation = read_json(gate)
+        if (not confirmation["aprobada"] or not all(confirmation["criterios"].values())
+                or confirmation["procedencia"]["pesos_sha256"][reward_path.name] != reward_meta["pesos_sha256"]
+                or reward_meta["pesos_sha256"] != digest(reward_path / "model.safetensors")
+                or confirmation["procedencia"]["muestra_sha256"] !=
+                digest(OUT / "particiones" / "recompensa_confirmacion.jsonl")):
+            raise ValueError("PPO requiere que la recompensa de seis épocas supere la confirmación independiente.")
     stats = reward_meta["normalizacion"]
-    if reward_meta["validacion"]["accuracy"] <= 0.5 or stats["desv"] <= 1e-6:
-        raise ValueError("La recompensa debe superar 0,5 de accuracy y discriminar antes de entrenar PPO.")
+    if (not six_epochs and reward_meta["validacion"]["accuracy"] <= 0.5) or stats["desv"] <= 1e-6:
+        raise ValueError("La recompensa de PPO requiere una validación aceptada y puntajes con variación.")
 
     sft = OUT / SFT_DIR
     sft_hash = {name: digest(sft / name) for name in ("adapter_model.safetensors", "adapter_config.json")}
-    path = OUT / output_name(PPO_DIR, pilot)
+    path = OUT / output_name(PPO_6E_DIR if six_epochs else PPO_DIR, pilot)
     config = {
         "version": 2, "modelo_revision": MODEL_REV, "particiones": hashes, "seed": SEED,
         "piloto": pilot, "sft": sft.name, "sft_sha256": sft_hash,
@@ -441,6 +608,8 @@ def train_ppo(parts, hashes, reward_path, reward_meta, pilot):
         "beta_kl": KL_BETA, "coef_valor": 0.5, "max_grad_norm": 1.0, "batch": PPO_BATCH, "epochs": 2,
         "checkpoint_cada": 1 if pilot else 8,
     }
+    if six_epochs:
+        config["confirmacion_sha256"] = digest(gate)
     config_hash = signature(config)
     if path.exists():
         meta = read_json(path / "reporte.json")
