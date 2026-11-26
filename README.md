@@ -50,6 +50,8 @@ $pythonTarea = 'tarea3/.runtime/rocm/Scripts/python.exe'
 
 Repetir el mismo comando retoma el último checkpoint. Si falta memoria, probar `--microlote 2 --lote-generacion 4` para acumular gradiente sobre el mismo lote de ocho. `--pasadas 2` añade una segunda pasada con otro orden fijo. Cambiar β con `--beta-kl 0.1` o `--beta-kl 0.02` crea otra corrida. En `evaluacion.ipynb`, la celda de experimentos genera sus CSV en `salidas/respuestas_256/ppo_experimentos/`. Después actualizar **Criterio de PPO** en `rlhf.ipynb`.
 
+Después de generar los CSV, ejecutar **Comparación final y planillas para anotar** para fijar la selección y dejar sus cinco configuraciones en `salidas/respuestas_256/final_entrega/`. La elección requiere al menos 20 % de respuestas distintas de SFT, sin respuestas vacías ni repetición marcada. Si ambas tasas califican, se conserva la menor. Si ninguna califica, queda el PPO de seis épocas. La selección y las huellas de sus CSV se registran en `seleccion_ppo.json`.
+
 Los [reportes de SFT](tarea3/salidas/sft_lr5e5/trainer_state.json) y [PPO de seis épocas](tarea3/salidas/ppo_lr3e6_6e/reporte.json) acompañan los pesos. El paquete local es `tarea3/salidas/Adaptadores_Tarea3.zip`. Para evaluar desde otro equipo, descomprimirlo en `tarea3/salidas/` conservando los nombres de las carpetas. Los pesos y el ZIP se distribuyen aparte de Git.
 
 ### Pauta de revisión humana
@@ -65,7 +67,7 @@ La sección **Toxicidad y revisión humana** genera `revision_humana.csv` con re
 
 Toxic-BERT recibe solo la respuesta generada, usa la probabilidad de la etiqueta `toxic` con umbral `0,5` y deja las respuestas vacías sin puntaje. Reutiliza puntajes para la misma respuesta y revisión del clasificador.
 
-La comparación principal se encuentra en `tarea3/salidas/respuestas_256/final_6e/`. Diego, Benjamín e Ignacio pueden editar las planillas `anotacion_integrante_1.csv`, `anotacion_integrante_2.csv` y `anotacion_integrante_3.csv`, respectivamente. Cada una contiene 100 casos principales y 20 casos de doble revisión. Conservar `id_revision` y `rol`. Ejecutar **Entorno** y **Comparación cuantitativa y anotación** para consolidar los votos desde los CSV. Si aparece un desacuerdo, registrar la decisión consensuada en `revision_humana.csv` y volver a ejecutar esa sección.
+La comparación principal y las planillas vigentes están en `tarea3/salidas/respuestas_256/final_entrega/`. Diego, Benjamín e Ignacio pueden editar `anotacion_integrante_1.csv`, `anotacion_integrante_2.csv` y `anotacion_integrante_3.csv`, respectivamente. Cada una contiene 100 casos principales y 20 casos de doble revisión. Conservar `id_revision` y `rol`. Ejecutar **Entorno** y **Comparación cuantitativa y anotación** para consolidar los votos desde los CSV. Si aparece un desacuerdo, registrar la decisión consensuada en `revision_humana.csv` y volver a ejecutar esa sección. El análisis del cuaderno se actualiza a partir de esos CSV.
 
 ### Intercambio de resultados
 

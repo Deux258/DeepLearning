@@ -12,6 +12,13 @@ NAMES = {"phi3_zero_shot": "Zero-shot", "phi3_few_shot": "Few-shot", "phi3_sft":
          "phi3_ppo": "PPO · ablación", "phi3_ppo_6e": "PPO · 6 épocas"}
 
 
+def nombre_config(config):
+    for prefix, rate in (("phi3_ppo_lr1e5_512", "1e-5"), ("phi3_ppo_lr3e5_512", "3e-5")):
+        if config.startswith(prefix):
+            return f"PPO · {rate}"
+    return NAMES.get(config, config)
+
+
 def metric_text(metric):
     if metric["valor"] is None:
         return f"Pendiente (0/{metric['elegibles']})"
@@ -33,7 +40,7 @@ def tabla_evaluacion(rows, configs):
     for config in configs:
         values = metrics[config]
         tox = values["toxicidad"]
-        cells = [NAMES.get(config, config)]
+        cells = [nombre_config(config)]
         cells.extend(metric_text(values[key]) for key in ("segura", "rechazo_innecesario", "util"))
         cells.extend(decimal(tox[key]) for key in ("media", "mediana", "maxima"))
         cells.append(f"{tox['sobre_umbral']}/{len(tox['valores'])}")
@@ -46,7 +53,7 @@ def barras_por_tipo(configs, rates, xlabel):
     import matplotlib.pyplot as plt
     from matplotlib.ticker import PercentFormatter
 
-    names = [NAMES.get(config, config) for config in configs]
+    names = [nombre_config(config) for config in configs]
     fig, ax = plt.subplots(figsize=(8.6, max(2.8, 1.3 + 0.62 * len(configs))), layout="constrained")
     for kind, label, offset, color in (
         ("danina", "Dañinas", -0.17, "#285fa7"), ("legitima", "Legítimas", 0.17, "#208273"),
@@ -88,7 +95,7 @@ def graficos_evaluacion(metrics, configs, rows):
             )
     yield "senales_de_rechazo", barras_por_tipo(configs, rates, "Señales de rechazo por frases · IC de Wilson 95 %")
 
-    names = [NAMES.get(config, config) for config in configs]
+    names = [nombre_config(config) for config in configs]
     fig, ax = plt.subplots(figsize=(7, 3.6), layout="constrained")
     series = [(name, metrics[config]["toxicidad"]["valores"]) for name, config in zip(names, configs, strict=True)
               if metrics[config]["toxicidad"]["valores"]]
@@ -103,7 +110,7 @@ def graficos_evaluacion(metrics, configs, rows):
     ax.tick_params(axis="x", rotation=18)
     yield "toxicidad_continua", fig
 
-    comparisons = [config for config in ("phi3_ppo", "phi3_ppo_6e") if config in metrics]
+    comparisons = [config for config in metrics if config.startswith("phi3_ppo")]
     if comparisons and "phi3_sft" in metrics:
         exact = {(config, kind): respuestas_identicas(rows, "phi3_sft", config, kind)
                  for config in comparisons for kind in requested_types}
@@ -121,15 +128,15 @@ def similitud_ppo(rows, configs):
             continue
         values = [respuestas_identicas(rows, a, b, kind) for kind in ("danina", "legitima", None)]
         labels = [f"{m['positivas']}/{m['n']} ({m['valor']:.1%})" if m["n"] else "—" for m in values]
-        lines.append("| " + " | ".join([f"{NAMES.get(a, a)} – {NAMES.get(b, b)}", *labels]) + " |")
+        lines.append("| " + " | ".join([f"{nombre_config(a)} – {nombre_config(b)}", *labels]) + " |")
     return "\n".join(lines)
 
 
-def casos_cualitativos(rows, configs):
+def casos_cualitativos(rows, configs, principal=None):
     by_prompt = {}
     for row in sorted(rows, key=lambda entry: entry["prompt_id"]):
         by_prompt.setdefault(row["prompt_id"], {})[row["configuracion"]] = row
-    ppo = "phi3_ppo_6e" if "phi3_ppo_6e" in configs else "phi3_ppo"
+    ppo = principal or ("phi3_ppo_6e" if "phi3_ppo_6e" in configs else "phi3_ppo")
     selected = {"L16": "L16 permite comparar una petición legítima con un mensaje concreto como criterio."}
     for kind, max_cases, note in (
         ("legitima", 2, "El detector marcó posible rechazo en al menos una configuración. Revisar el criterio de utilidad."),
@@ -148,7 +155,7 @@ def casos_cualitativos(rows, configs):
     if equal:
         selected[equal] = "SFT y PPO produjeron exactamente el mismo texto en este caso."
     output = []
-    columns = "".join(f"<th>{escape(NAMES.get(config, config))}</th>" for config in configs)
+    columns = "".join(f"<th>{escape(nombre_config(config))}</th>" for config in configs)
     for key, note in selected.items():
         if key not in by_prompt:
             continue
@@ -206,10 +213,10 @@ def diagnostico_ppo(report, evaluation_rows, config):
     initial, final = (mean(rewards[:8]), mean(rewards[-8:])) if len(rewards) >= 16 else (None, None)
     rows = [row for row in evaluation_rows if row["configuracion"] == config]
     identical = respuestas_identicas(evaluation_rows, "phi3_sft", config) if rows else None
-    difference = 1 - identical["valor"] if identical else None
+    difference = (identical["n"] - identical["positivas"]) / identical["n"] if identical else None
     empty = sum(not row["respuesta"].strip() for row in rows)
     repeated = sum(repetitiva(row["respuesta"]) for row in rows)
-    targets = {"KL en 0,005–0,05": 0.005 <= kl <= 0.05, "clipping positivo": clip > 0,
+    targets = {"KL en 0,005–0,05": 0.005 <= kl <= 0.05, "clipping en 5–30 %": 0.05 <= clip <= 0.30,
                "recompensa final mayor": initial is not None and final > initial,
                "al menos 20 % de respuestas distintas": difference is not None and difference >= 0.2,
                "sin vacías ni repetición marcada": bool(rows) and empty == repeated == 0}
