@@ -280,9 +280,8 @@ def consolidar_revision(folder, paths):
         if not row["justificacion"] and all(row[label] for label in relevant):
             row["justificacion"] = votes.get("primaria", {}).get("justificacion", "")
     disagreements_path = folder / "desacuerdos.csv"
-    if disagreements or disagreements_path.is_file():
-        guardar_csv(disagreements_path, disagreements,
-                    fields=("id_revision", "etiqueta", "primaria", "doble", "consenso"))
+    guardar_csv(disagreements_path, disagreements,
+                fields=("id_revision", "etiqueta", "primaria", "doble", "consenso"))
     guardar_csv(blind_path, blind)
     results = {label: {**kappa_cohen(paired[label]), "por_par": {f"{a}–{b}": kappa_cohen(by_pair[label, (a, b)])
                                                               for a, b in ((1, 2), (1, 3), (2, 3))}}

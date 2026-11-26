@@ -7,6 +7,12 @@
 - [Evaluación zero-shot, few-shot, SFT y PPO](tarea3/evaluacion.ipynb)
 - [Prompts comunes y demostraciones few-shot](tarea3/prompts.json)
 
+### Estado breve
+
+**Realizado:** Phi-3 zero-shot/few-shot, SFT y experimentos de recompensa/PPO, evaluación automática con Toxic-BERT y cuadernos preparados para consolidar métricas.
+
+**Pendiente:** completar las anotaciones humanas independientes. Después se podrán calcular κ de Cohen, resolver y registrar desacuerdos, actualizar las métricas humanas y cerrar el análisis. También falta integrar la parte de Mistral del tercer integrante y preparar la presentación y el video final.
+
 ### Entorno
 
 **VS Code local.** Abre la carpeta raíz `DeepLearning` y abre los `.ipynb` en el editor. El proyecto incluye la ruta de búsqueda para ROCm. Si VS Code estaba abierto al cambiarla, ejecuta **Developer: Reload Window** desde `Ctrl+Shift+P`. En cada cuaderno, elige **Select Kernel → Select Another Kernel → Python Environments → rocm (3.14.10)** o **Jupyter Kernels → Tarea 3 (GPU)**. La primera celda confirma el Python que ejecuta el cuaderno. [Selector de kernels de VS Code](https://code.visualstudio.com/docs/datascience/jupyter-kernel-management)
